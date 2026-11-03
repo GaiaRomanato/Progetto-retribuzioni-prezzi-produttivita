@@ -1,0 +1,36 @@
+Hourly compensation, index, Italy, Quarterly
+Codice Dataset: MNA.Q.Y.IT.W2.S1.S1._Z.COM_HW._Z._T._Z.IX.V.N
+Link: https://data.ecb.europa.eu/data/datasets/MNA/MNA.Q.Y.IT.W2.S1.S1._Z.COM_HW._Z._T._Z.IX.V.N
+Fonte Originaria: BCE
+Data di Estrazione: 03/11/2026
+Unità: Indice
+Frequenza: Trimestrale
+Stagionalità: Seasonally Adjusted
+Periodo: Q1 1995 - Q2 2026 
+Numerosità: 126
+
+
+
+Labour Productivity (per hours worked), index, Italy, Quarterly
+Codice Dataset: MNA.Q.Y.IT.W0.S1.S1._Z.LPR_HW._Z._T._Z.IX.LR.N
+Link: https://data.ecb.europa.eu/data/datasets/MNA/MNA.Q.Y.IT.W0.S1.S1._Z.LPR_HW._Z._T._Z.IX.LR.N
+Fonte Originaria: BCE
+Data di Estrazione: 03/11/2026
+Unità: Indice
+Frequenza: Trimestrale
+Stagionalità: Seasonally Adjusted
+Periodo: Q1 1995 - Q2 2026
+Numerosità: 126
+
+
+
+Consumer Price Indices (CPIs, HICPs), COICOP 1999: Consumer Price Index: Total for Italy
+Codice Dataset: ITACPIALLQINMEI
+Link: https://fred.stlouisfed.org/series/ITACPIALLQINMEI
+Fonte Originaria: OECD
+Data di Estrazione: 03/11/2026
+Unità: Indice
+Frequenza: Trimestrale
+Stagionalità: Seasonally Not adjusted - Stagionalità non rilevata
+Periodo: Q1 1955 - Q1 2025
+Numerosità: 281
