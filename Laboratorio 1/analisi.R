@@ -8,8 +8,8 @@ data1 = fredr(
     observation_end = as.Date("2025-12-31")
 )
 
-data2 <- read_csv("ECB Data Portal_20261103124508.csv")
-data3 <- read_csv("ECB Data Portal_20261103124429.csv")
+data2 <- read_csv("../Dati/labour_productivity.csv")
+data3 <- read_csv("../Dati/hourly compensations.csv")
 
 names(data1)   # CPI
 names(data2)   # Labour productivity
@@ -21,4 +21,4 @@ data <- as.data.frame(cbind(data2$`TIME PERIOD`[1:121], data1$value,
 colnames(data) = c("period", "cpi", "labour.productivity", "labour.compensation")
 head(data)
 
-write.csv(data, "dati economici.csv")
+write.csv(data, "../Dati/serie_sistemate.csv")
