@@ -11,15 +11,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### LABORATORIO 1
 
-```{r include=FALSE}
+```{r include=FALSE, warnings=F}
 library(readr)
+library(tidyverse)
 
-data <- read.csv("C:/Users/loris/Desktop/Dati economici/labs/dati economici.csv", row.names = 1)
+data <- read.csv("../Dati/serie_sistemate.csv", row.names = 1)
 data <- ts(data[, c("cpi", "labour.productivity", "labour.compensation")],
            start = c(1995, 1), 
            frequency = 4)
 train <- window(data, start = c(1995, 1), end = c(2016, 1))
 test <- window(data, start = c(2016, 2))
+
+data_diff = diff(data)
+train_diff <- window(data_diff, start = c(1995, 1), end = c(2016, 1))
+test_diff <- window(data_diff, start = c(2016, 2))
 ```
 
 ## PUNTO 1
@@ -29,14 +34,13 @@ C'è da fare i 3 grafici fatti bene separati e descriverli!!!!!!!!!!!!!!
 ```{r}
 df_plot <- as.data.frame(data)
 
-# Oppure, se vuoi mantenere una colonna per il tempo basata sui nomi delle righe o sull'ordine:
 df_plot$time <- time(ts(df_plot[, c("cpi", "labour.productivity", "labour.compensation")], 
                           start = c(1995, 1), frequency = 4))
 
-# 3. Definisci il set di Train e Test
+# Definiamo il set di Train e Test
 df_plot$set <- ifelse(df_plot$time <= 2016.0, "Train", "Test")
 
-# 4. Ora pivot_longer funzionerà senza errori perché df_plot è un data.frame
+# Grafico delle 3 serie
 df_long <- df_plot %>%
   pivot_longer(
     cols = c(cpi, labour.productivity, labour.compensation),
@@ -44,7 +48,6 @@ df_long <- df_plot %>%
     values_to = "valore"
   )
 
-# 5. Genera il grafico con ggplot2
 ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
   geom_line(linewidth = 0.8) +
   geom_vline(xintercept = 2016.0, linetype = "dashed", color = "black", linewidth = 0.7) +
@@ -57,15 +60,73 @@ ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
   )
 ```
 
+
+```{r}
+df_plot <- as.data.frame(data_diff)
+
+df_plot$time <- time(ts(df_plot[, c("cpi", "labour.productivity", "labour.compensation")], 
+                          start = c(1995, 1), frequency = 4))
+
+# Definiamo il set di Train e Test
+df_plot$set <- ifelse(df_plot$time <= 2016.0, "Train", "Test")
+
+# Grafico delle 3 serie
+df_long <- df_plot %>%
+  pivot_longer(
+    cols = c(cpi, labour.productivity, labour.compensation),
+    names_to = "variabile",
+    values_to = "valore"
+  )
+
+ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
+  geom_line(linewidth = 0.8) +
+  geom_vline(xintercept = 2016.0, linetype = "dashed", color = "black", linewidth = 0.7) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Serie Storiche Economiche: Train vs Test",
+    x = "Tempo (Anni)",
+    y = "Valore",
+    color = "Variabile"
+  )
+```
+
+
+
 C'è da fare i grafici fatti bene e descriverli!!!!!!!!!!!!!!
 
 ```{r}
-acf(train[, 1], 36)
-acf(train[, 2], 36)
-acf(train[, 3], 36)
-pacf(train[, 1], 36)
-pacf(train[, 2], 36)
-pacf(train[, 3], 36)
+colnames(train_diff) <- c("CPI", "Labour productivity", "Labour compensation")
+
+par(
+  mfrow = c(3, 2),
+  mar = c(3.2, 3.5, 2.5, 1),
+  oma = c(0, 0, 2, 0),
+  mgp = c(1.5, 0.4, 0),
+  cex.main = 0.85,
+  cex.lab = 0.75,
+  cex.axis = 0.7
+)
+
+for (i in 1:3) {
+  acf(train_diff[, i], lag.max = 36,
+      main = paste(colnames(train)[i], "- ACF"))
+
+  pacf(train_diff[, i], lag.max = 36,
+       main = paste(colnames(train)[i], "- PACF"))
+}
+
+mtext("Funzioni di autocorrelazione",
+      outer = TRUE, side = 3, cex = 1, font = 2)
+
+par(mfrow = c(1, 1))
+
+
+
+```
+```{r}
+acf(data_diff)
+pacf(data_diff)
+
 ```
 
 ## PUNTO 2
