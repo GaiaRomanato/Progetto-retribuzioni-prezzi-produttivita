@@ -1,0 +1,114 @@
+---
+title: "lab1"
+author: "Pivato, Fabris, Romanato, Bigon"
+date: "2026-11-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### LABORATORIO 1
+
+```{r include=FALSE}
+library(readr)
+
+data <- read.csv("C:/Users/loris/Desktop/Dati economici/labs/dati economici.csv", row.names = 1)
+data <- ts(data[, c("cpi", "labour.productivity", "labour.compensation")],
+           start = c(1995, 1), 
+           frequency = 4)
+train <- window(data, start = c(1995, 1), end = c(2016, 1))
+test <- window(data, start = c(2016, 2))
+```
+
+## PUNTO 1
+
+C'è da fare i 3 grafici fatti bene separati e descriverli!!!!!!!!!!!!!!
+
+```{r}
+df_plot <- as.data.frame(data)
+
+# Oppure, se vuoi mantenere una colonna per il tempo basata sui nomi delle righe o sull'ordine:
+df_plot$time <- time(ts(df_plot[, c("cpi", "labour.productivity", "labour.compensation")], 
+                          start = c(1995, 1), frequency = 4))
+
+# 3. Definisci il set di Train e Test
+df_plot$set <- ifelse(df_plot$time <= 2016.0, "Train", "Test")
+
+# 4. Ora pivot_longer funzionerà senza errori perché df_plot è un data.frame
+df_long <- df_plot %>%
+  pivot_longer(
+    cols = c(cpi, labour.productivity, labour.compensation),
+    names_to = "variabile",
+    values_to = "valore"
+  )
+
+# 5. Genera il grafico con ggplot2
+ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
+  geom_line(linewidth = 0.8) +
+  geom_vline(xintercept = 2016.0, linetype = "dashed", color = "black", linewidth = 0.7) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Serie Storiche Economiche: Train vs Test",
+    x = "Tempo (Anni)",
+    y = "Valore",
+    color = "Variabile"
+  )
+```
+
+C'è da fare i grafici fatti bene e descriverli!!!!!!!!!!!!!!
+
+```{r}
+acf(train[, 1], 36)
+acf(train[, 2], 36)
+acf(train[, 3], 36)
+pacf(train[, 1], 36)
+pacf(train[, 2], 36)
+pacf(train[, 3], 36)
+```
+
+## PUNTO 2
+
+```{r}
+library(vars)
+library(tidyverse)
+
+# 1. Creazione delle differenze prime (delta = X_t - X_{t-1})
+train_diff <- diff(train)
+
+# Verifica rapida delle prime righe e delle dimensioni del dataset differenziato
+head(data_diff)
+dim(data_diff)
+
+# Supponiamo di avere un data frame chiamato 'data_diff' 
+# contenente le tre serie in differenze (es. d_comp, d_cpi, d_prod) senza valori NA
+# Esempio: data_diff <- train_set_diff %>% select(d_comp, d_cpi, d_prod) %>% drop_na()
+
+# 1. Scelta del ritardo massimo (es. 8 per dati trimestrali)
+p_max <- 8
+
+# 2. Utilizzo di VARselect per confrontare AIC e BIC
+lag_selection <- VARselect(train_diff, lag.max = p_max, type = "const")
+
+# Visualizziamo i risultati proposti dai vari criteri (AIC, BIC/SC, HQ, FPE)
+print(lag_selection$selection)
+
+# Estraiamo i valori consigliati dai due criteri principali
+p_aic <- lag_selection$selection["AIC(n)"]
+p_bic <- lag_selection$selection["SC(n)"] # SC (Schwarz Criterion) corrisponde al BIC
+
+cat("Ordine suggerito da AIC:", p_aic, "\n")
+cat("Ordine suggerito da BIC:", p_bic, "\n")
+# 3. Stima del primo modello VAR (es. basato su AIC o sul più alto)
+var_model_1 <- VAR(train_diff, p = p_aic, type = "const")
+
+# 4. Stima del secondo modello VAR (es. basato su BIC o su un ordine parsimonioso alternativo)
+# Nota: se p_aic e p_bic sono uguali, puoi scegliere un p alternativo sensato (es. p_bic - 1 o p_bic + 1)
+p_alt <- ifelse(p_aic != p_bic, p_bic, p_bic - 1) 
+var_model_2 <- VAR(train_diff, p = p_alt, type = "const")
+
+# Visualizziamo i summary per confrontare le stime e le statistiche
+summary(var_model_1)
+summary(var_model_2)
+```
