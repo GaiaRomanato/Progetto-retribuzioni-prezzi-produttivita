@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r include=FALSE, warnings=F}
 library(readr)
 library(tidyverse)
+library(vars)
 
 data <- read.csv("../Dati/serie_sistemate.csv", row.names = 1)
 data <- ts(data[, c("cpi", "labour.productivity", "labour.compensation")],
@@ -22,154 +23,244 @@ data <- ts(data[, c("cpi", "labour.productivity", "labour.compensation")],
 train <- window(data, start = c(1995, 1), end = c(2016, 1))
 test <- window(data, start = c(2016, 2))
 
-data_diff = diff(data)
+data_log = log(data)
+train_log <- window(data_log, start = c(1995, 1), end = c(2016, 1))
+test_log <- window(data_log, start = c(2016, 2))
+
+data_diff = diff(data_log)
 train_diff <- window(data_diff, start = c(1995, 1), end = c(2016, 1))
 test_diff <- window(data_diff, start = c(2016, 2))
 ```
 
 ## PUNTO 1
 
-C'è da fare i 3 grafici fatti bene separati e descriverli!!!!!!!!!!!!!!
+Grafico con le 3 serie in logaritmo e log-differenziate.
 
-```{r}
-df_plot <- as.data.frame(data)
+```{r echo=F}
+# Preparazione dei dati
+prepare_data <- function(df, tipo, start = c(1995, 1)) {
+  df_plot <- as.data.frame(df)
 
-df_plot$time <- time(ts(df_plot[, c("cpi", "labour.productivity", "labour.compensation")], 
-                          start = c(1995, 1), frequency = 4))
+  df_plot$time <- time(ts(
+    df_plot[, c("cpi", "labour.productivity", "labour.compensation")],
+    start = start,
+    frequency = 4
+  ))
 
-# Definiamo il set di Train e Test
-df_plot$set <- ifelse(df_plot$time <= 2016.0, "Train", "Test")
+  df_plot %>%
+    pivot_longer(
+      cols = c(cpi, labour.productivity, labour.compensation),
+      names_to = "variabile",
+      values_to = "valore"
+    ) %>%
+    mutate(
+      tipo = tipo,
+      variabile = recode(
+        variabile,
+        "cpi" = "Prezzi",
+        "labour.productivity" = "Produttività",
+        "labour.compensation" = "Retribuzioni"
+      )
+    )
+}
 
-# Grafico delle 3 serie
-df_long <- df_plot %>%
-  pivot_longer(
-    cols = c(cpi, labour.productivity, labour.compensation),
-    names_to = "variabile",
-    values_to = "valore"
-  )
+# Unione delle serie
+df_log <- prepare_data(data_log, "Logaritmi")
+df_diff <- prepare_data(data_diff, "Differenze", start = c(1995, 2))
 
-ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
-  geom_line(linewidth = 0.8) +
-  geom_vline(xintercept = 2016.0, linetype = "dashed", color = "black", linewidth = 0.7) +
-  theme_minimal(base_size = 13) +
+df_final <- bind_rows(df_log, df_diff)
+
+# Ordine dei pannelli
+df_final$variabile <- factor(
+  df_final$variabile,
+  levels = c("Retribuzioni", "Prezzi", "Produttività")
+)
+
+df_final$tipo <- factor(
+  df_final$tipo,
+  levels = c("Logaritmi", "Differenze")
+)
+
+# Grafico
+ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
+  geom_line(linewidth = 0.7) +
+  geom_vline(
+    xintercept = 2016,
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.6
+  ) +
+  facet_grid(tipo ~ variabile, scales = "free_y") +
+  scale_color_manual(values = c(
+    "Retribuzioni" = "#D73027",
+    "Prezzi" = "#2878B5",
+    "Produttività" = "#238B45"
+  )) +
+  theme_minimal(base_size = 12) +
   labs(
-    title = "Serie Storiche Economiche: Train vs Test",
-    x = "Tempo (Anni)",
-    y = "Valore",
-    color = "Variabile"
+    title = "Logaritmi delle serie (in alto) e prime differenze dei logaritmi (in basso)",
+    subtitle = "La linea tratteggiata indica la separazione tra training e test set",
+    x = "Anno",
+    y = "Valore"
+  ) +
+  theme(
+    legend.position = "none",
+    strip.text.x = element_text(face = "bold", size = 11),
+    strip.text.y = element_blank(),
+    plot.title = element_text(face = "bold", size = 13),
+    panel.spacing = unit(1, "lines")
   )
 ```
-
-
-```{r}
-df_plot <- as.data.frame(data_diff)
-
-df_plot$time <- time(ts(df_plot[, c("cpi", "labour.productivity", "labour.compensation")], 
-                          start = c(1995, 1), frequency = 4))
-
-# Definiamo il set di Train e Test
-df_plot$set <- ifelse(df_plot$time <= 2016.0, "Train", "Test")
-
-# Grafico delle 3 serie
-df_long <- df_plot %>%
-  pivot_longer(
-    cols = c(cpi, labour.productivity, labour.compensation),
-    names_to = "variabile",
-    values_to = "valore"
-  )
-
-ggplot(df_long, aes(x = time, y = valore, color = variabile)) +
-  geom_line(linewidth = 0.8) +
-  geom_vline(xintercept = 2016.0, linetype = "dashed", color = "black", linewidth = 0.7) +
-  theme_minimal(base_size = 13) +
-  labs(
-    title = "Serie Storiche Economiche: Train vs Test",
-    x = "Tempo (Anni)",
-    y = "Valore",
-    color = "Variabile"
-  )
-```
-
 
 
 C'è da fare i grafici fatti bene e descriverli!!!!!!!!!!!!!!
 
-```{r}
-colnames(train_diff) <- c("CPI", "Labour productivity", "Labour compensation")
+```{r echo=F}
+colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
 
 par(
   mfrow = c(3, 2),
-  mar = c(3.2, 3.5, 2.5, 1),
+  mar = c(3.8, 3.8, 2.2, 1),
   oma = c(0, 0, 2, 0),
-  mgp = c(1.5, 0.4, 0),
+  mgp = c(2, 0.8, 0),
   cex.main = 0.85,
   cex.lab = 0.75,
   cex.axis = 0.7
 )
 
 for (i in 1:3) {
+
   acf(train_diff[, i], lag.max = 36,
-      main = paste(colnames(train)[i], "- ACF"))
+      main = "", ann = FALSE)
+
+  title(
+    main = paste(colnames(train_diff)[i], "- ACF"),
+    line = 0.8,
+    cex.main = 0.85
+  )
+
+  title(
+    xlab = "Lag",
+    ylab = "ACF",
+    line = 2,
+    cex.lab = 0.75
+  )
 
   pacf(train_diff[, i], lag.max = 36,
-       main = paste(colnames(train)[i], "- PACF"))
+       main = "", ann = FALSE)
+
+  title(
+    main = paste(colnames(train_diff)[i], "- PACF"),
+    line = 0.8,
+    cex.main = 0.85
+  )
+
+  title(
+    xlab = "Lag",
+    ylab = "PACF",
+    line = 2,
+    cex.lab = 0.75
+  )
 }
 
-mtext("Funzioni di autocorrelazione",
+mtext("Funzioni di autocorrelazione delle serie differenziate",
       outer = TRUE, side = 3, cex = 1, font = 2)
 
 par(mfrow = c(1, 1))
 
-
-
 ```
-```{r}
-acf(data_diff)
-pacf(data_diff)
+```{r echo=F}
+colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
 
+par(
+  mfrow = c(3, 1),
+  mar = c(3.8, 3.8, 2.2, 1),
+  oma = c(0, 0, 2, 0),
+  mgp = c(2, 0.8, 0),
+  cex.main = 0.85,
+  cex.lab = 0.75,
+  cex.axis = 0.7
+)
+
+ccf(train_diff[, 1], train_diff[, 2],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Prezzi - Produttività", line = 0.8, cex.main = 0.85)
+
+ccf(train_diff[, 1], train_diff[, 3],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Prezzi - Retribuzioni", line = 0.8, cex.main = 0.85)
+
+ccf(train_diff[, 2], train_diff[, 3],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Produttività - Retribuzioni", line = 0.8, cex.main = 0.85)
+
+mtext("Cross-correlations delle serie differenziate",
+      outer = TRUE, side = 3, cex = 1, font = 2)
+
+par(mfrow = c(1, 1))
 ```
 
 ## PUNTO 2
 
 ```{r}
 library(vars)
-library(tidyverse)
 
-# 1. Creazione delle differenze prime (delta = X_t - X_{t-1})
-train_diff <- diff(train)
+# 1. Selezione del numero massimo di ritardi
+lag_max <- 8
 
-# Verifica rapida delle prime righe e delle dimensioni del dataset differenziato
-head(data_diff)
-dim(data_diff)
+selezione <- VARselect(
+  train_diff,
+  lag.max = lag_max,
+  type = "const"
+)
 
-# Supponiamo di avere un data frame chiamato 'data_diff' 
-# contenente le tre serie in differenze (es. d_comp, d_cpi, d_prod) senza valori NA
-# Esempio: data_diff <- train_set_diff %>% select(d_comp, d_cpi, d_prod) %>% drop_na()
+# Confronto AIC, HQ, SC (BIC) e FPE
+selezione$criteria
 
-# 1. Scelta del ritardo massimo (es. 8 per dati trimestrali)
-p_max <- 8
+# Ordini suggeriti da AIC e BIC
+selezione$selection
 
-# 2. Utilizzo di VARselect per confrontare AIC e BIC
-lag_selection <- VARselect(train_diff, lag.max = p_max, type = "const")
 
-# Visualizziamo i risultati proposti dai vari criteri (AIC, BIC/SC, HQ, FPE)
-print(lag_selection$selection)
+# 2. Stima di due VAR con ordini suggeriti dai criteri informativi
 
-# Estraiamo i valori consigliati dai due criteri principali
-p_aic <- lag_selection$selection["AIC(n)"]
-p_bic <- lag_selection$selection["SC(n)"] # SC (Schwarz Criterion) corrisponde al BIC
+p_aic <- selezione$selection["AIC(n)"]
+p_bic <- selezione$selection["SC(n)"]
 
-cat("Ordine suggerito da AIC:", p_aic, "\n")
-cat("Ordine suggerito da BIC:", p_bic, "\n")
-# 3. Stima del primo modello VAR (es. basato su AIC o sul più alto)
-var_model_1 <- VAR(train_diff, p = p_aic, type = "const")
+var_aic <- VAR(
+  train_diff,
+  p = as.integer(p_aic),
+  type = "const"
+)
 
-# 4. Stima del secondo modello VAR (es. basato su BIC o su un ordine parsimonioso alternativo)
-# Nota: se p_aic e p_bic sono uguali, puoi scegliere un p alternativo sensato (es. p_bic - 1 o p_bic + 1)
-p_alt <- ifelse(p_aic != p_bic, p_bic, p_bic - 1) 
-var_model_2 <- VAR(train_diff, p = p_alt, type = "const")
+var_bic <- VAR(
+  train_diff,
+  p = as.integer(p_bic),
+  type = "const"
+)
 
-# Visualizziamo i summary per confrontare le stime e le statistiche
-summary(var_model_1)
-summary(var_model_2)
+
+# 3. Risultati delle stime
+
+summary(var_aic)
+summary(var_bic)
+
+
+# 4. Diagnostica dei residui: autocorrelazione
+
+serial.test(var_aic, lags.pt = 12, type = "PT.asymptotic")
+serial.test(var_bic, lags.pt = 12, type = "PT.asymptotic")
+
+
+# 5. Diagnostica di stabilità
+
+roots(var_aic)
+roots(var_bic)
 ```
+
+
+## PUNTO 3
+
+
