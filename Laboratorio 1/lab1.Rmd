@@ -263,4 +263,60 @@ roots(var_bic)
 
 ## PUNTO 3
 
+```{r echo=F}
+# Confronto dei modelli ---------------------------------------------------
 
+# Ordini selezionati
+selezione$selection
+
+# Criteri informativi
+selezione$criteria
+
+
+# 1. Scelta provvisoria del modello
+# Si privilegia il BIC per una maggiore parsimonia
+
+var_finale <- var_bic
+
+p_finale <- var_finale$p
+K <- ncol(train_diff)
+
+# Numero totale di coefficienti stimati
+n_parametri <- K * (1 + K * p_finale)
+
+cat("Ordine del VAR scelto:", p_finale, "\n")
+cat("Numero totale di parametri:", n_parametri, "\n")
+
+
+# 2. Confronto tra i due modelli
+
+cat("\nVAR selezionato da AIC:\n")
+summary(var_aic)
+
+cat("\nVAR selezionato da BIC:\n")
+summary(var_bic)
+
+
+# 3. Estrazione dell'equazione delle retribuzioni
+
+equazione <- var_finale$varresult[["Retribuzioni"]]
+
+cat("\nCoefficienti dell'equazione delle retribuzioni:\n")
+print(summary(equazione))
+
+
+# 4. Tabella dei coefficienti
+
+coefficienti <- coef(summary(equazione))
+print(coefficienti)
+
+```
+
+
+La selezione dell'ordine del VAR è stata effettuata confrontando i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
+
+I due criteri hanno suggerito specificazioni differenti: l'AIC ha selezionato un VAR(3), mentre il BIC ha individuato un VAR(1). Tale differenza riflette la maggiore penalizzazione della complessità del modello da parte del BIC.
+
+È stato scelto provvisoriamente il VAR(1), privilegiando la parsimonia della specificazione. Il modello comprende 12 coefficienti complessivi, di cui 9 coefficienti autoregressivi e 3 intercette, rispetto ai 30 coefficienti del VAR(3). Questa scelta appare ragionevole anche in considerazione della numerosità del campione, pari a 83 osservazioni effettive.
+
+L'equazione delle retribuzioni mostra un'associazione positiva tra la crescita dei prezzi nel trimestre precedente e la crescita corrente delle retribuzioni: il coefficiente stimato è pari a 0.5884 ed è significativo al 5% (p-value = 0.0500). I coefficienti associati alla produttività e alle retribuzioni ritardate non risultano invece statisticamente significativi. Poiché le variabili sono espresse in prime differenze dei logaritmi, i coefficienti descrivono associazioni tra tassi di crescita trimestrali e non possono essere interpretati automaticamente in senso causale.
