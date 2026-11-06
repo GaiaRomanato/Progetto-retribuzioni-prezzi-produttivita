@@ -125,7 +125,6 @@ La produttività presenta invece un andamento più stabile rispetto alle altre d
 
 Nel complesso, sembra che le retribuzioni e i prezzi siano più legate tra loro rispetto alla produttività, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
 
-
 ```{r echo=F}
 colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
 
@@ -185,7 +184,6 @@ Si osserva che le serie delle differenze di Produttività e Retribuzioni si comp
 
 Per la serie delle differenze dei Prezzi risultano significativi i primi tre ritardi in quantità decrescenti mentre la PACF è troncata dopo il primo ordine, suggerendo una dipendenza temporale breve e non associata strettamente a intervalli temporali rilevanti, ad esempio l'annualità. I valori di ACF e PACF suggeriscono che la serie dei Prezzi possa assumere caratteristiche autoregressive.
 
-
 ```{r echo=F}
 colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
 
@@ -219,12 +217,12 @@ mtext("Cross-correlations delle serie differenziate",
 
 par(mfrow = c(1, 1))
 ```
-Mentre non sono rilevate cross-correlazioni tra Prezzi e Produttività, e tra Produttività e Retribuzioni ad alcun intervallo, si notano valori leggermente significativi di cross-correlazione tra Prezzi e Retribuzioni per lag bassi (0, indicando correlazione immediata, e -2, indicando influenza delle serie dei Prezzi sulle Retribuzioni con sei mesi di ritardo)
 
+Mentre non sono rilevate cross-correlazioni tra Prezzi e Produttività, e tra Produttività e Retribuzioni ad alcun intervallo, si notano valori leggermente significativi di cross-correlazione tra Prezzi e Retribuzioni per lag bassi (0, indicando correlazione immediata, e -2, indicando influenza delle serie dei Prezzi sulle Retribuzioni con sei mesi di ritardo)
 
 ## PUNTO 2
 
-```{r}
+```{r include = FALSE}
 library(vars)
 
 # 1. Selezione del numero massimo di ritardi
@@ -242,65 +240,34 @@ selezione$criteria
 # Ordini suggeriti da AIC e BIC
 selezione$selection
 
-
-# 2. Stima di due VAR con ordini suggeriti dai criteri informativi
-
-p_aic <- selezione$selection["AIC(n)"]
-p_bic <- selezione$selection["SC(n)"]
-
 var_aic <- VAR(
   train_diff,
-  p = as.integer(p_aic),
+  p = 1,
   type = "const"
 )
 
 var_bic <- VAR(
   train_diff,
-  p = as.integer(p_bic),
+  p = 1,
   type = "const"
 )
-
-
-# 3. Risultati delle stime
 
 summary(var_aic)
 summary(var_bic)
 
-
-# 4. Diagnostica dei residui: autocorrelazione
-
-serial.test(var_aic, lags.pt = 12, type = "PT.asymptotic")
-serial.test(var_bic, lags.pt = 12, type = "PT.asymptotic")
-
-
-# 5. Diagnostica di stabilità
-
-roots(var_aic)
-roots(var_bic)
 ```
 
 | AIC(n) | BIC(n) | HQ(n) | FPE(n) |
 |:------:|:------:|:-----:|:------:|
 |   1    |   1    |   1   |   1    |
 
-La selezione dell'ordine del VAR è stata effettuata confrontando i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
+La selezione dell'ordine del VAR è stata effettuata confrontando principalmente i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
 
-I due criteri hanno suggerito specificazioni differenti: l'AIC ha selezionato un VAR(3), mentre il BIC ha individuato un VAR(1). Tale differenza riflette la maggiore penalizzazione della complessità del modello da parte del BIC.
+I due criteri, insieme ai criteri HQ e FPE, suggeriscono la stessa specificazione del modello. In particolare, entrambi selezionano un VAR(1) il quale assume che la dinamica corrente delle variabili dipenda dai valori assunti da tutte le variabili nel periodo immediatamente precedente.
 
 ## PUNTO 3
 
-```{r echo=F}
-# Confronto dei modelli ---------------------------------------------------
-
-# Ordini selezionati
-selezione$selection
-
-# Criteri informativi
-selezione$criteria
-
-
-# 1. Scelta provvisoria del modello
-# Si privilegia il BIC per una maggiore parsimonia
+```{r echo=F, include = FALSE}
 
 var_finale <- var_bic
 
@@ -338,9 +305,4 @@ print(coefficienti)
 
 ```
 
-È stato scelto provvisoriamente il VAR(1), privilegiando la parsimonia della specificazione. Il modello comprende 12 coefficienti complessivi, di cui 9 coefficienti autoregressivi e 3 intercette, rispetto ai 30 coefficienti del VAR(3). Questa scelta appare ragionevole anche in considerazione della numerosità del campione, pari a 83 osservazioni effettive.
-
-L'equazione delle retribuzioni mostra un'associazione positiva tra la crescita dei prezzi nel trimestre precedente e la crescita corrente delle retribuzioni: il coefficiente stimato è pari a 0.5884 ed è significativo al 5% (p-value = 0.0500). I coefficienti associati alla produttività e alle retribuzioni ritardate non risultano invece statisticamente significativi. Poiché le variabili sono espresse in prime differenze dei logaritmi, i coefficienti descrivono associazioni tra tassi di crescita trimestrali e non possono essere interpretati automaticamente in senso causale.
-
-
-
+È stato scelto provvisoriamente il VAR(1). Il modello comprende 12 coefficienti complessivi, di cui 9 coefficienti autoregressivi e 3 intercette. Questa scelta appare ragionevole anche in considerazione della numerosità del campione, pari a 83 osservazioni effettive.
