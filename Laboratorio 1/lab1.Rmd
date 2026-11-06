@@ -115,7 +115,7 @@ In particolare, le curve rosse indicano il compenso nominale per ora lavorata (L
 
 Le curve nella parte superiore sono espresse in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training, a sinistra, da quello di test, a destra.
 
-Le serie delle retribuzioni e dei prezzi evidenziano un trend crescente abbastanza regolare, soprattutto nella prima parte del campione. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le prime differenze oscillano prevalentemente intorno allo zero, mostrando una variabilità relativamente contenuta, sebbene siano presenti alcuni picchi positivi e negativi. In particolare, si notano anomalie particolarmente marcate intorno al 2020, conseguenze della pandemia COVID.
+Le serie delle retribuzioni e dei prezzi evidenziano un trend crescente abbastanza regolare, soprattutto nella prima parte del campione. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le prime differenze oscillano prevalentemente intorno allo zero, mostrando una variabilità relativamente contenuta, sebbene siano presenti alcuni picchi positivi e negativi. In particolare, si notano anomalie marcate intorno al 2020, conseguenze della pandemia COVID.
 
 La produttività presenta invece un andamento più stabile rispetto alle altre due variabili. In scala logaritmica si osserva una crescita moderata nella prima parte del campione, seguita da oscillazioni contenute intorno a un livello relativamente costante. La persistenza appare quindi meno marcata rispetto a quella delle retribuzioni e dei prezzi. Le prime differenze oscillano prevalentemente intorno allo zero, senza evidenziare un andamento sistematico. Come nelle curve precedenti, si notano anomalie intorno all'anno 2020.
 
@@ -175,6 +175,11 @@ mtext("Funzioni di autocorrelazione delle serie differenziate",
 par(mfrow = c(1, 1))
 
 ```
+
+Si osserva che le serie delle differenze di Produttività e Retribuzioni si comportano come serie White Noise, essendo i valori di ACF e PACF non significativi per quasi ogni valore (per le Retribuzioni mostrano correlazione significativa a tre lag, ma data la scarsa interpretabilità di tre ritardi in un contesto di stagionalità in un campionamento trimestrale, si può considerare poco rilevante).
+
+Per la serie delle differenze dei Prezzi risulta significativo il primo ritardo, indicando una dipendenza temporale tra un trimestre e quello successivo, mentre nei lag successivi i valori dell'ACF oscillano attorno alla soglia della significatività permettendo poca interpretabilità.
+
 
 ```{r echo=F}
 colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
