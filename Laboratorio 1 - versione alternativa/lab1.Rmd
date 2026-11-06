@@ -1,0 +1,310 @@
+---
+title: "lab1"
+author: "Pivato, Fabris, Romanato, Bigon"
+date: "2026-11-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### LABORATORIO 1
+
+```{r include=FALSE, warnings=F}
+library(readr)
+library(tidyverse)
+library(vars)
+library(seasonal)
+
+data <- read.csv("../Dati/serie_sistemate_progetto_b.csv", row.names = 1)
+data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
+           start = c(1995, 1), 
+           frequency = 4)
+
+train <- window(data, start = c(1995, 1), end = c(2016, 1))
+test <- window(data, start = c(2016, 2))
+
+data_log = log(data)
+train_log <- window(data_log, start = c(1995, 1), end = c(2016, 1))
+test_log <- window(data_log, start = c(2016, 2))
+
+data_diff = diff(data_log)
+train_diff <- window(data_diff, start = c(1995, 1), end = c(2016, 1))
+test_diff <- window(data_diff, start = c(2016, 2))
+```
+
+## PUNTO 1
+
+```{r echo=F}
+# Preparazione dei dati
+prepare_data <- function(df, tipo, start = c(1995, 1)) {
+  df_plot <- as.data.frame(df)
+
+  df_plot$time <- time(ts(
+    df_plot[, c("esportazioni", "vendite", "prod_industriale")],
+    start = start,
+    frequency = 4
+  ))
+
+  df_plot %>%
+    pivot_longer(
+      cols = c(esportazioni, vendite, prod_industriale),
+      names_to = "variabile",
+      values_to = "valore"
+    ) %>%
+    mutate(
+      tipo = tipo,
+      variabile = recode(
+        variabile,
+        "esportazioni" = "Esportazioni",
+        "vendite" = "Vendite al dettaglio",
+        "prod_industriale" = "Produzione industriale"
+      )
+    )
+}
+
+# Unione delle serie
+df_log <- prepare_data(data_log, "Logaritmi")
+df_diff <- prepare_data(data_diff, "Differenze", start = c(1995, 2))
+
+df_final <- bind_rows(df_log, df_diff)
+
+# Ordine dei pannelli
+df_final$variabile <- factor(
+  df_final$variabile,
+  levels = c(
+    "Esportazioni",
+    "Vendite al dettaglio",
+    "Produzione industriale"
+  )
+)
+
+df_final$tipo <- factor(
+  df_final$tipo,
+  levels = c("Logaritmi", "Differenze")
+)
+
+# Grafico
+ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
+  geom_line(linewidth = 0.7) +
+  geom_vline(
+    xintercept = 2016,
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.6
+  ) +
+  facet_grid(tipo ~ variabile, scales = "free_y") +
+  scale_x_continuous(
+    breaks = seq(1995, 2025, by = 10),
+    minor_breaks = NULL
+  ) +
+  scale_color_manual(values = c(
+    "Esportazioni" = "#D73027",
+    "Vendite al dettaglio" = "#2878B5",
+    "Produzione industriale" = "#238B45"
+  )) +
+  theme_minimal(base_size = 12) +
+  labs(
+    title = "Logaritmi delle serie e prime differenze dei logaritmi",
+    x = "Anno",
+    y = "Valore"
+  ) +
+  theme(
+    legend.position = "none",
+    strip.text.x = element_text(face = "bold", size = 11),
+    strip.text.y = element_blank(),
+    plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
+    panel.spacing = unit(1, "lines")
+  )
+```
+
+Il grafico mostra l’andamento delle tre serie storiche relative a retribuzioni, prezzi e produttività in Italia.
+
+In particolare, le curve rosse indicano il compenso nominale per ora lavorata (Labour Compensation per Hour Worked, economia totale), le curve blu indicano i prezzi al consumo complessivi (CPI: All Items) - opportunamente destagionalizzati - e le curve verdi indicano la produttività reale per ora lavorata (Real GDP per Hour Worked, economia totale).
+
+Le curve nella parte superiore sono espresse in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training, a sinistra, da quello di test, a destra.
+
+Le serie delle retribuzioni e dei prezzi evidenziano un trend crescente abbastanza regolare, soprattutto nella prima parte del campione. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le prime differenze oscillano prevalentemente intorno allo zero, mostrando una variabilità relativamente contenuta, sebbene siano presenti alcuni picchi positivi e negativi. In particolare, si notano anomalie marcate intorno al 2020, conseguenze della pandemia COVID.
+
+La produttività presenta invece un andamento più stabile rispetto alle altre due variabili. In scala logaritmica si osserva una crescita moderata nella prima parte del campione, seguita da oscillazioni contenute intorno a un livello relativamente costante. La persistenza appare quindi meno marcata rispetto a quella delle retribuzioni e dei prezzi. Le prime differenze oscillano prevalentemente intorno allo zero, senza evidenziare un andamento sistematico. Come nelle curve precedenti, si notano anomalie intorno all'anno 2020.
+
+Nel complesso, sembra che le retribuzioni e i prezzi siano più legate tra loro rispetto alla produttività, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
+
+```{r echo=F}
+par(
+  mfrow = c(3, 2),
+  mar = c(3.8, 3.8, 2.2, 1),
+  oma = c(0, 0, 2, 0),
+  mgp = c(2, 0.8, 0),
+  cex.main = 0.85,
+  cex.lab = 0.75,
+  cex.axis = 0.7
+)
+
+for (i in 1:3) {
+
+  acf(train_diff[, i], lag.max = 36,
+      main = "", ann = FALSE)
+
+  title(
+    main = paste(colnames(train_diff)[i], "- ACF"),
+    line = 0.8,
+    cex.main = 0.85
+  )
+
+  title(
+    xlab = "Lag",
+    ylab = "ACF",
+    line = 2,
+    cex.lab = 0.75
+  )
+
+  pacf(train_diff[, i], lag.max = 36,
+       main = "", ann = FALSE)
+
+  title(
+    main = paste(colnames(train_diff)[i], "- PACF"),
+    line = 0.8,
+    cex.main = 0.85
+  )
+
+  title(
+    xlab = "Lag",
+    ylab = "PACF",
+    line = 2,
+    cex.lab = 0.75
+  )
+}
+
+mtext("Funzioni di autocorrelazione delle serie differenziate",
+      outer = TRUE, side = 3, cex = 1, font = 2)
+
+par(mfrow = c(1, 1))
+
+```
+
+Si osserva che le serie delle differenze di Produttività e Retribuzioni si comportano come serie White Noise, essendo i valori di ACF e PACF non significativi per quasi ogni valore (per le Retribuzioni mostrano correlazione significativa a tre lag, ma data la scarsa interpretabilità di tre ritardi in un contesto di stagionalità in un campionamento trimestrale, si può considerare poco rilevante).
+
+Per la serie delle differenze dei Prezzi risultano significativi i primi tre ritardi in quantità decrescenti mentre la PACF è troncata dopo il primo ordine, suggerendo una dipendenza temporale breve e non associata strettamente a intervalli temporali rilevanti, ad esempio l'annualità. I valori di ACF e PACF suggeriscono che la serie dei Prezzi possa assumere caratteristiche autoregressive.
+
+```{r echo=F}
+par(
+  mfrow = c(3, 1),
+  mar = c(3.8, 3.8, 2.2, 1),
+  oma = c(0, 0, 2, 0),
+  mgp = c(2, 0.8, 0),
+  cex.main = 0.85,
+  cex.lab = 0.75,
+  cex.axis = 0.7
+)
+
+ccf(train_diff[, 1], train_diff[, 2],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Esportazioni - Vendite", line = 0.8, cex.main = 0.85)
+
+ccf(train_diff[, 1], train_diff[, 3],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Esportazioni - Prod industriale", line = 0.8, cex.main = 0.85)
+
+ccf(train_diff[, 2], train_diff[, 3],
+    lag.max = 36, main = "", ylab = "CCF", xlab = "Lag")
+
+title(main = "Vendite - Prod industriale", line = 0.8, cex.main = 0.85)
+
+mtext("Cross-correlations delle serie differenziate",
+      outer = TRUE, side = 3, cex = 1, font = 2)
+
+par(mfrow = c(1, 1))
+```
+
+Mentre non sono rilevate cross-correlazioni tra Prezzi e Produttività, e tra Produttività e Retribuzioni ad alcun intervallo, si notano valori leggermente significativi di cross-correlazione tra Prezzi e Retribuzioni per lag bassi (0, indicando correlazione immediata, e -2, indicando influenza delle serie dei Prezzi sulle Retribuzioni con sei mesi di ritardo)
+
+## PUNTO 2
+
+```{r include = FALSE}
+library(vars)
+
+# 1. Selezione del numero massimo di ritardi
+lag_max <- 8
+
+selezione <- VARselect(
+  train_diff,
+  lag.max = lag_max,
+  type = "const"
+)
+
+# Confronto AIC, HQ, SC (BIC) e FPE
+selezione$criteria
+
+# Ordini suggeriti da AIC e BIC
+selezione$selection
+
+var_aic <- VAR(
+  train_diff,
+  p = 3,
+  type = "const"
+)
+
+var_bic <- VAR(
+  train_diff,
+  p = 2,
+  type = "const"
+)
+
+summary(var_aic)
+summary(var_bic)
+
+```
+
+| AIC(n) | BIC(n) | HQ(n) | FPE(n) |
+|:------:|:------:|:-----:|:------:|
+|   1    |   1    |   1   |   1    |
+
+La selezione dell'ordine del VAR è stata effettuata confrontando principalmente i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
+
+I due criteri, insieme ai criteri HQ e FPE, suggeriscono la stessa specificazione del modello. In particolare, entrambi selezionano un VAR(1) il quale assume che la dinamica corrente delle variabili dipenda dai valori assunti da tutte le variabili nel periodo immediatamente precedente.
+
+## PUNTO 3
+
+```{r echo=F, include = FALSE}
+
+var_finale <- var_bic
+
+p_finale <- var_finale$p
+K <- ncol(train_diff)
+
+# Numero totale di coefficienti stimati
+n_parametri <- K * (1 + K * p_finale)
+
+cat("Ordine del VAR scelto:", p_finale, "\n")
+cat("Numero totale di parametri:", n_parametri, "\n")
+
+
+# 2. Confronto tra i due modelli
+
+cat("\nVAR selezionato da AIC:\n")
+summary(var_aic)
+
+cat("\nVAR selezionato da BIC:\n")
+summary(var_bic)
+
+
+# # 3. Estrazione dell'equazione delle retribuzioni
+# 
+# equazione <- var_finale$varresult[["Retribuzioni"]]
+# 
+# cat("\nCoefficienti dell'equazione delle retribuzioni:\n")
+# print(summary(equazione))
+# 
+# 
+# # 4. Tabella dei coefficienti
+# 
+# coefficienti <- coef(summary(equazione))
+# print(coefficienti)
+
+```
+
+È stato scelto provvisoriamente il VAR(1). Il modello comprende 12 coefficienti complessivi, di cui 9 coefficienti autoregressivi e 3 intercette. Questa scelta appare ragionevole anche in considerazione della numerosità del campione, pari a 83 osservazioni effettive.
