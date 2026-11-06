@@ -34,8 +34,6 @@ test_diff <- window(data_diff, start = c(2016, 2))
 
 ## PUNTO 1
 
-Grafico con le 3 serie in logaritmo e log-differenziate.
-
 ```{r echo=F}
 # Preparazione dei dati
 prepare_data <- function(df, tipo, start = c(1995, 1)) {
@@ -98,8 +96,7 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
   )) +
   theme_minimal(base_size = 12) +
   labs(
-    title = "Logaritmi delle serie (in alto) e prime differenze dei logaritmi (in basso)",
-    subtitle = "La linea tratteggiata indica la separazione tra training e test set",
+    title = "Logaritmi delle serie e prime differenze dei logaritmi",
     x = "Anno",
     y = "Valore"
   ) +
@@ -112,8 +109,17 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
   )
 ```
 
+Il grafico mostra l’andamento delle tre serie storiche relative a retribuzioni, prezzi e produttività in Italia.
 
-C'è da fare i grafici fatti bene e descriverli!!!!!!!!!!!!!!
+In particolare, le curve rosse indicano il compenso nominale per ora lavorata (Labour Compensation per Hour Worked, economia totale), le curve blu indicano i prezzi al consumo complessivi (CPI: All Items) e le curve verdi indicano la produttività reale per ora lavorata (Real GDP per Hour Worked, economia totale).
+
+Le curve nella parte superiore sono espresse in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training, a sinistra, da quello di test, a destra.
+
+Le serie delle retribuzioni e dei prezzi evidenziano un trend crescente abbastanza regolare, soprattutto nella prima parte del campione. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le prime differenze oscillano prevalentemente intorno allo zero, mostrando una variabilità relativamente contenuta, sebbene siano presenti alcuni picchi positivi e negativi. In particolare, si notano anomalie particolarmente marcate intorno al 2020, conseguenze della pandemia COVID.
+
+La produttività presenta invece un andamento più stabile rispetto alle altre due variabili. In scala logaritmica si osserva una crescita moderata nella prima parte del campione, seguita da oscillazioni contenute intorno a un livello relativamente costante. La persistenza appare quindi meno marcata rispetto a quella delle retribuzioni e dei prezzi. Le prime differenze oscillano prevalentemente intorno allo zero, senza evidenziare un andamento sistematico. Come nelle curve precedenti, si notano anomalie intorno all'anno 2020.
+
+Nel complesso, sembra che le retribuzioni e i prezzi siano più legate tra loro rispetto alla produttività, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
 
 ```{r echo=F}
 colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
@@ -169,6 +175,7 @@ mtext("Funzioni di autocorrelazione delle serie differenziate",
 par(mfrow = c(1, 1))
 
 ```
+
 ```{r echo=F}
 colnames(train_diff) <- c("Prezzi", "Produttività", "Retribuzioni")
 
@@ -260,7 +267,6 @@ roots(var_aic)
 roots(var_bic)
 ```
 
-
 ## PUNTO 3
 
 ```{r echo=F}
@@ -311,7 +317,6 @@ coefficienti <- coef(summary(equazione))
 print(coefficienti)
 
 ```
-
 
 La selezione dell'ordine del VAR è stata effettuata confrontando i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
 
