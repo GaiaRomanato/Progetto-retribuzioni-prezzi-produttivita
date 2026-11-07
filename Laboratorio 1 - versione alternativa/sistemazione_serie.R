@@ -1,38 +1,31 @@
-library(fredr)
 library(dplyr)
 library(lubridate)
 
-# Scaricamento delle serie
-data1 <- fredr(
-  series_id = "NAEXKP06ITQ661S",
-  observation_start = as.Date("1995-01-01"),
-  observation_end = as.Date("2025-12-31")
-)
+data1 <- read.csv("../Dati/NAEXKP06ITQ661S.csv")
+data1 <- data1 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02"))) %>%
+  rename(date = observation_date, esportazioni = NAEXKP06ITQ661S)
 
-data2 <- fredr(
-  series_id = "ITASLRTTO01IXEBSAQ",
-  observation_start = as.Date("1995-01-01"),
-  observation_end = as.Date("2025-12-31")
-)
+data2 <- read.csv("../Dati/ITASLRTTO01IXEBSAQ.csv")
+data2 <- data2 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02"))) %>%
+  rename(date = observation_date, vendite = ITASLRTTO01IXEBSAQ)
 
-data3 <- fredr(
-  series_id = "ITAPROINDQISMEI",
-  observation_start = as.Date("1995-01-01"),
-  observation_end = as.Date("2025-12-31")
-)
-
-# Selezione delle variabili e rinomina
-d1 <- data1 %>% select(date, esportazioni = value)
-d2 <- data2 %>% select(date, vendite = value)
-d3 <- data3 %>% select(date, prod_industriale = value)
+data3 <- read.csv("../Dati/ITAPROINDQISMEI.csv")
+data3 <- data3 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02")))%>%
+  rename(date = observation_date, prod_industriale = ITAPROINDQISMEI)
 
 # Intersezione delle date e costruzione del dataframe
-data <- d1 %>%
-  inner_join(d2, by = "date") %>%
-  inner_join(d3, by = "date") %>%
+data <- data1 %>%
+  inner_join(data2, by = "date") %>%
+  inner_join(data3, by = "date") %>%
   arrange(date) %>%
-  mutate(period = paste0(year(date), "Q", quarter(date))) %>%
-  select(period, esportazioni, vendite, prod_industriale)
+  mutate(trimestre = paste0(year(date), " Q", quarter(date))) %>%
+  dplyr::select(trimestre, esportazioni, vendite, prod_industriale)
 
 head(data)
 tail(data)

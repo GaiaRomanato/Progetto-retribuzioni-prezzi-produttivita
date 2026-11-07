@@ -1,7 +1,6 @@
 ---
-title: "lab1"
-author: "Pivato, Fabris, Romanato, Bigon"
-date: "2026-11-03"
+title: "Laboratorio 1"
+author: "I PILastri - Pivato, Fabris, Romanato, Bigon"
 output: pdf_document
 ---
 
@@ -9,7 +8,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### LABORATORIO 1
+
 
 ```{r include=FALSE, warnings=F}
 library(readr)
@@ -19,26 +18,26 @@ library(seasonal)
 
 data <- read.csv("../Dati/serie_sistemate_progetto_b.csv", row.names = 1)
 data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
-           start = c(1995, 1), 
+           start = c(1990, 1), 
            frequency = 4)
 
-train <- window(data, start = c(1995, 1), end = c(2016, 1))
-test <- window(data, start = c(2016, 2))
+train <- window(data, start = c(1990, 1), end = c(2013, 4))
+test <- window(data, start = c(2014, 1))
 
 data_log = log(data)
-train_log <- window(data_log, start = c(1995, 1), end = c(2016, 1))
-test_log <- window(data_log, start = c(2016, 2))
+train_log <- window(data_log, start = c(1990, 1), end = c(2013, 4))
+test_log <- window(data_log, start = c(2014, 1))
 
 data_diff = diff(data_log)
-train_diff <- window(data_diff, start = c(1995, 1), end = c(2016, 1))
-test_diff <- window(data_diff, start = c(2016, 2))
+train_diff <- window(data_diff, start = c(1990, 1), end = c(2013, 4))
+test_diff <- window(data_diff, start = c(2014, 1))
 ```
 
 ## PUNTO 1
 
 ```{r echo=F}
 # Preparazione dei dati
-prepare_data <- function(df, tipo, start = c(1995, 1)) {
+prepare_data <- function(df, tipo, start = c(1990, 1)) {
   df_plot <- as.data.frame(df)
 
   df_plot$time <- time(ts(
@@ -66,7 +65,7 @@ prepare_data <- function(df, tipo, start = c(1995, 1)) {
 
 # Unione delle serie
 df_log <- prepare_data(data_log, "Logaritmi")
-df_diff <- prepare_data(data_diff, "Differenze", start = c(1995, 2))
+df_diff <- prepare_data(data_diff, "Differenze", start = c(1990, 2))
 
 df_final <- bind_rows(df_log, df_diff)
 
@@ -89,14 +88,14 @@ df_final$tipo <- factor(
 ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
   geom_line(linewidth = 0.7) +
   geom_vline(
-    xintercept = 2016,
+    xintercept = 2014,
     linetype = "dashed",
     color = "black",
     linewidth = 0.6
   ) +
   facet_grid(tipo ~ variabile, scales = "free_y") +
   scale_x_continuous(
-    breaks = seq(1995, 2025, by = 10),
+    breaks = seq(1990, 2023, by = 10),
     minor_breaks = NULL
   ) +
   scale_color_manual(values = c(
@@ -119,7 +118,7 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
   )
 ```
 
-Il grafico mostra l’andamento delle tre serie storiche relative a retribuzioni, prezzi e produttività in Italia.
+Il grafico mostra l’andamento delle tre serie storiche relative alla quantificazione di esportazioni di merci,  e produzione industriale in Italia.
 
 In particolare, le curve rosse indicano il compenso nominale per ora lavorata (Labour Compensation per Hour Worked, economia totale), le curve blu indicano i prezzi al consumo complessivi (CPI: All Items) - opportunamente destagionalizzati - e le curve verdi indicano la produttività reale per ora lavorata (Real GDP per Hour Worked, economia totale).
 
@@ -184,9 +183,9 @@ par(mfrow = c(1, 1))
 
 ```
 
-Si osserva che le serie delle differenze di Produttività e Retribuzioni si comportano come serie White Noise, essendo i valori di ACF e PACF non significativi per quasi ogni valore (per le Retribuzioni mostrano correlazione significativa a tre lag, ma data la scarsa interpretabilità di tre ritardi in un contesto di stagionalità in un campionamento trimestrale, si può considerare poco rilevante).
+Per le serie riguardanti le differenze di Esportazioni e Produzione Industriale si osservano valori di ACF decrescenti verso lo zero lungo più ritardi, e si osserva un decadimento immediato dei valori di PACF. Tali valori corrispondono ai comportamenti di modelli autoregressivi.
+Per la serie riguardante le differenze delle Vendite si osserva che i valori di ACF sono pressoché non significativi a qualsiasi lag, ma si nota che la PACF ha valore significativo attorno a 15 ritardi (circa 4 anni): potrebbe trattarsi di un risultato spurio dovuto al rumore o suggerire che le Vendite abbiano comportamenti isolati che si ripresentano a lungo termine
 
-Per la serie delle differenze dei Prezzi risultano significativi i primi tre ritardi in quantità decrescenti mentre la PACF è troncata dopo il primo ordine, suggerendo una dipendenza temporale breve e non associata strettamente a intervalli temporali rilevanti, ad esempio l'annualità. I valori di ACF e PACF suggeriscono che la serie dei Prezzi possa assumere caratteristiche autoregressive.
 
 ```{r echo=F}
 par(
@@ -219,22 +218,21 @@ mtext("Cross-correlations delle serie differenziate",
 
 par(mfrow = c(1, 1))
 ```
+Non sono rilevate cross-correlazioni di interesse tra indici di Esportazione e Vendite reali.
 
-Mentre non sono rilevate cross-correlazioni tra Prezzi e Produttività, e tra Produttività e Retribuzioni ad alcun intervallo, si notano valori leggermente significativi di cross-correlazione tra Prezzi e Retribuzioni per lag bassi (0, indicando correlazione immediata, e -2, indicando influenza delle serie dei Prezzi sulle Retribuzioni con sei mesi di ritardo)
+Tra gli indici di Esportazione e di Produzione Industriale si nota invece una correlazione molto forte e cross-correlazioni significative ai lag -1 e 1: ciò significa che è identificata correlazione tra Esportazioni e Produzione del trimestre successivo, e tra Produzione ed Esportazioni del periodo seguente. Le cross-correlazioni identificate ai due lag potrebbero però essere espressione di rumore dovuta all'alta correlazione tra le variabili misurate nello stesso periodo.
+
+Tra Vendite reali e Produzione Industriale si osserva un solo lag significativo: -2. Ciò significa che è individuata una correlazione tra il valore delle vendite effettuate in un trimestre e l'indice di produzione industriale misurato 6 mesi dopo. Si sottolinea però che ciò individua una semplice correlazione e non dovrebbe essere considerata implicazione di causalità.
 
 ## PUNTO 2
 
-```{r include = FALSE}
+```{r echo = FALSE, include = FALSE}
 library(vars)
 
 # 1. Selezione del numero massimo di ritardi
 lag_max <- 8
 
-selezione <- VARselect(
-  train_diff,
-  lag.max = lag_max,
-  type = "const"
-)
+selezione <- VARselect(train_diff,  lag.max = lag_max,  type = "const")
 
 # Confronto AIC, HQ, SC (BIC) e FPE
 selezione$criteria
@@ -242,36 +240,27 @@ selezione$criteria
 # Ordini suggeriti da AIC e BIC
 selezione$selection
 
-var_aic <- VAR(
-  train_diff,
-  p = 3,
-  type = "const"
-)
-
-var_bic <- VAR(
-  train_diff,
-  p = 2,
-  type = "const"
-)
+ var_aic <- VAR(train_diff, p = 3, type = "const")
+# var_bic <- VAR(train_diff, p = 2, type = "const")
 
 summary(var_aic)
-summary(var_bic)
+# summary(var_bic)
 
 ```
 
 | AIC(n) | BIC(n) | HQ(n) | FPE(n) |
 |:------:|:------:|:-----:|:------:|
-|   1    |   1    |   1   |   1    |
+|   3    |   1    |   2   |   3    |
 
 La selezione dell'ordine del VAR è stata effettuata confrontando principalmente i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
 
-I due criteri, insieme ai criteri HQ e FPE, suggeriscono la stessa specificazione del modello. In particolare, entrambi selezionano un VAR(1) il quale assume che la dinamica corrente delle variabili dipenda dai valori assunti da tutte le variabili nel periodo immediatamente precedente.
+Il criterio AIC suggerisce di considerare 3 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine.
 
 ## PUNTO 3
 
-```{r echo=F, include = FALSE}
+```{r echo=F, include = F}
 
-var_finale <- var_bic
+var_finale <- var_aic
 
 p_finale <- var_finale$p
 K <- ncol(train_diff)
@@ -288,23 +277,28 @@ cat("Numero totale di parametri:", n_parametri, "\n")
 cat("\nVAR selezionato da AIC:\n")
 summary(var_aic)
 
-cat("\nVAR selezionato da BIC:\n")
-summary(var_bic)
+# cat("\nVAR selezionato da BIC:\n")
+# summary(var_bic)
 
 
-# # 3. Estrazione dell'equazione delle retribuzioni
-# 
-# equazione <- var_finale$varresult[["Retribuzioni"]]
-# 
-# cat("\nCoefficienti dell'equazione delle retribuzioni:\n")
-# print(summary(equazione))
-# 
-# 
-# # 4. Tabella dei coefficienti
-# 
-# coefficienti <- coef(summary(equazione))
-# print(coefficienti)
+# 3. Estrazione dell'equazione delle retribuzioni
+
+equazione <- var_finale$varresult[["prod_industriale"]]
+
+cat("\nCoefficienti dell'equazione delle retribuzioni:\n")
+print(summary(equazione))
+
+
+# 4. Tabella dei coefficienti
+
+coefficienti <- coef(summary(equazione))
+print(coefficienti)
 
 ```
+È stato scelto provvisoriamente il modello VAR(3) suggerito dall'AIC, in quanto un ordine di regressione di 3 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
+Si prende di esempio l'equazione 
+$$ \Delta (X_t)_{Prod. \,Industriale} = d_t + \sum_{j = 1}^3A_j \; \Delta X_{t-j}+\epsilon_t$$
+cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale rispetto ai primi tre ritardi delle tre serie considerate.
+Tra i coefficienti stimati si evidenziano come significative al 5% le Esportazioni al lag 1 (Coefficiente: 0.376, P-value: 0.00549), le Vendite al lag 2 (Coefficiente: 0.712, P-value: 0.00098), e la Produzione Industriale stessa al lag 3 (Coefficiente: -0.425, P-value: 0.00346)
 
-È stato scelto provvisoriamente il VAR(1). Il modello comprende 12 coefficienti complessivi, di cui 9 coefficienti autoregressivi e 3 intercette. Questa scelta appare ragionevole anche in considerazione della numerosità del campione, pari a 83 osservazioni effettive.
+Si può quindi concludere che la produzione Industriale ad un dato trimestre è influenzata negativamente dallo stesso valore di produzione di 9 mesi prima, molto positivamente dalla quantità di vendite relative a 6 mesi prima, e positivamente dalle Esportazioni del trimestre precedente.
