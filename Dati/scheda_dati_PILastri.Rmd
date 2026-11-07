@@ -1,0 +1,40 @@
+---
+title: 'Scheda Dati'
+author: 'I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia'
+subtitle: 'Progetto B (Italia): produzione industriale, vendite al dettaglio ed
+  esportazioni reali'
+output:
+  pdf_document: default
+  html_document:
+    theme: readable
+    highlight: tango
+---
+
+La presente scheda dati riporta le caratteristiche, le fonti ufficiali e la struttura delle tre serie storiche selezionate per l'analisi macroeconomica riferita all'**Italia** (Progetto B):
+
+* **Produzione Industriale**: Indicatore della produzione in volume nel settore industriale (esclusa l'edilizia). Rappresenta l'offerta dell'industria italiana.
+* **Vendite al Dettaglio in Volume**: Misura del volume totale delle vendite al dettaglio.
+* **Esportazioni Reali di Beni e Servizi**: Indica la domanda estera di beni e servizi di produzione nazionale.
+
+
+Tutte le serie storiche provengono dal sito ufficiale di **FRED** (*Federal Reserve Bank of St. Louis*).
+
+La seguente tabella sintetizza le caratteristiche e i metadati delle 3 serie:
+
+| Metadato / Descrizione | Serie 1: Produzione industriale | Serie 2: Vendite al dettaglio | Serie 3: Esportazioni reali |
+| :--- | :--- | :--- | :--- |
+| **Titolo ufficiale FRED** | Production, Sales, Work Started and Orders: Production Volume: Economic Activity: Industry (Except Construction) for Italy | Sales: Retail Trade: Total Retail Trade: Volume for Italy | National Accounts: GDP by Expenditure: Constant Prices: Exports of Goods and Services for Italy |
+| **Codice serie FRED** | `ITAPROINDQISMEI` | `ITASLRTTO01IXEBSAQ` | `NAEXKP06ITQ661S` |
+| **Fonte / Release** | OECD — Main Economic Indicators | OECD — Main Economic Indicators | OECD — Main Economic Indicators |
+| **Unità di misura** | Indice 2015=100 (`Index 2015=100`) | Indice Eurostat base (`Index Eurostat base`) | Indice 2015=100 (`Index 2015=100`) |
+| **Stagionalità** | Destagionalizzato | Destagionalizzato | Destagionalizzato |
+| **Frequenza** | Trimestrale | Trimestrale | Trimestrale |
+| **Campione Originario** | 1955-Q1 — 2024-Q1 (277 oss.) | 1990-Q1 — 2023-Q3 (135 oss.) | 1981-Q1 — 2023-Q3 (171 oss.) |
+
+Le tre serie storiche hanno quindi tutte frequenza trimestrale e sono già destagionalizzate; inoltre sono prive di dati mancanti. L'intersezione temporale tra le 3 serie definisce il periodo utile per l'analisi:
+
+* **Inizio del campione comune**: 1990-Q1 (primo trimestre 1990).
+* **Fine del campione comune**: 2023-Q3 (terzo trimestre 2023).
+* **Numerosità totale del campione comune**: 135 osservazioni trimestrali.
+
+Il dataset finale con i valori delle serie per il periodo comune è disponibile nel file \texttt{dataset.csv}.
