@@ -23,7 +23,7 @@ library(tidyverse)
 library(vars)
 library(seasonal)
 
-data <- read.csv("../Dati/dataset_progetto_b.csv", row.names = 1)
+data <- read.csv("../Dati/dataset.csv", row.names = 1)
 data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
            start = c(1990, 1), frequency = 4)
 
@@ -39,8 +39,8 @@ train_diff <- window(data_diff, start = c(1990, 1), end = c(2016, 4))
 test_diff <- window(data_diff, start = c(2017, 1))
 ```
 
-Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al secondo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.
-Le tre serie sono misurate su indici in riferimento all'anno 2015, tenendo così conto degli effetti dell'inflazione, dei cambi di prezzi e altre oscillazioni economiche naturali.
+Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al secondo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.  
+Le serie sono espresse sotto forma di numeri indice, con anno base 2015 = 100 (ad eccezione delle vendite al dettaglio, per le quali viene utilizzata la base Eurostat); su di esse è stata applicata una trasformazione logaritmica, al fine di rendere più stabile la variabilità delle serie, attenuare eventuali fenomeni di eteroschedasticità e facilitare l’interpretazione delle variazioni in termini relativi.
 
 ```{r echo=F}
 # Preparazione dei dati
@@ -124,7 +124,10 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
     panel.spacing = unit(1, "lines")
   )
 ```
-Le curve nella parte superiore rappresentano gli indici unitari con cui le tre quantità sono misurate espressi in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training a sinistra da quello di test a destra (Anno 2017).
+Le curve nella parte superiore del grafico rappresentano gli indici unitari con cui le tre quantità sono misurate espressi in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training a sinistra da quello di test a destra; infatti, il dataset è diviso nel modo seguente: 
+
+- **Training set**: dal 1990 (Q1) al 2016 (Q4), per un totale di 108 osservazioni;
+- **Test set**: dal 2017 (Q1) al 2023 (Q3), per un totale di 27 osservazioni.
 
 Le serie delle Esportazioni (rosso) evidenzia un trend crescente seppur volubile a innovazioni anche intense. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le sue prime differenze oscillano leggermente sopra lo zero con variazioni anche forti. 
 
