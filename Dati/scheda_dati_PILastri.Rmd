@@ -43,4 +43,4 @@ Le tre serie storiche hanno quindi tutte frequenza trimestrale e sono già desta
 * **Fine del campione comune**: 2023-Q3 (terzo trimestre 2023).
 * **Numerosità totale del campione comune**: 135 osservazioni trimestrali.
 
-Il dataset finale con i valori delle serie per il periodo comune è disponibile nel file \texttt{dataset\_progetto\_b.csv}. Può essere ricostruito attraverso lo script \texttt{sistemazione\_serie.R} a partire dai tre dataset originali, inclusi nella cartella Dati, archiviati dal sito ufficiale di **FRED** il 5 Novembre 2026
+Il dataset finale con i valori delle serie per il periodo comune è disponibile nel file \texttt{dataset.csv}. Può essere ricostruito attraverso lo script \texttt{sistemazione\_serie.R} a partire dai tre dataset originali, inclusi nella cartella Dati, archiviati dal sito ufficiale di **FRED** il 5 Novembre 2026

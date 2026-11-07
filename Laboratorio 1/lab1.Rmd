@@ -39,7 +39,7 @@ train_diff <- window(data_diff, start = c(1990, 1), end = c(2016, 4))
 test_diff <- window(data_diff, start = c(2017, 1))
 ```
 
-Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al secondo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.  
+Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al terzo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.  
 Le serie sono espresse sotto forma di numeri indice, con anno base 2015 = 100 (ad eccezione delle vendite al dettaglio, per le quali viene utilizzata la base Eurostat); su di esse è stata applicata una trasformazione logaritmica, al fine di rendere più stabile la variabilità delle serie, attenuare eventuali fenomeni di eteroschedasticità e facilitare l’interpretazione delle variazioni in termini relativi.
 
 ```{r echo=F}
