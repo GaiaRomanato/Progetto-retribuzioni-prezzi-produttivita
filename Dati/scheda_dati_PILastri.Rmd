@@ -1,13 +1,19 @@
 ---
 title: 'Scheda Dati'
 author: 'I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia'
-subtitle: 'Progetto B (Italia): produzione industriale, vendite al dettaglio ed
-  esportazioni reali'
+subtitle: 'Progetto B (Italia): Produzione industriale, Vendite al dettaglio ed
+  Esportazioni reali'
 output:
   pdf_document: default
   html_document:
     theme: readable
     highlight: tango
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
+  - \posttitle{\end{center}\vspace{-0.5cm}}
+  - \preauthor{\begin{center}\large\vspace{-0.3cm}}
+  - \postauthor{\end{center}\vspace{-1.5cm}}
 ---
 
 La presente scheda dati riporta le caratteristiche, le fonti ufficiali e la struttura delle tre serie storiche selezionate per l'analisi macroeconomica riferita all'**Italia** (Progetto B):
@@ -37,4 +43,4 @@ Le tre serie storiche hanno quindi tutte frequenza trimestrale e sono già desta
 * **Fine del campione comune**: 2023-Q3 (terzo trimestre 2023).
 * **Numerosità totale del campione comune**: 135 osservazioni trimestrali.
 
-Il dataset finale con i valori delle serie per il periodo comune è disponibile nel file \texttt{dataset.csv}.
+Il dataset finale con i valori delle serie per il periodo comune è disponibile nel file \texttt{dataset\_progetto\_b.csv}. Può essere ricostruito attraverso lo script \texttt{sistemazione\_serie.R} a partire dai tre dataset originali, inclusi nella cartella Dati, archiviati dal sito ufficiale di **FRED** il 5 Novembre 2026

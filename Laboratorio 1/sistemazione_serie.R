@@ -21,4 +21,4 @@ data <- as.data.frame(cbind(data2$`TIME PERIOD`[1:121], data1$value,
 colnames(data) = c("period", "cpi", "labour.productivity", "labour.compensation")
 head(data)
 
-write.csv(data, "../Dati/serie_sistemate.csv")
+write.csv(data, "../Dati/dataset_progetto_c.csv")

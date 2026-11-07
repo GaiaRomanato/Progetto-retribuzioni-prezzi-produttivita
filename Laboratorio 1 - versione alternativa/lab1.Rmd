@@ -1,13 +1,15 @@
 ---
 title: "Laboratorio 1"
-author: "I PILastri - Pivato, Fabris, Romanato, Bigon"
+author: 'I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia'
+subtitle: 'Progetto B (Italia): Produzione industriale, Vendite al dettaglio ed
+  Esportazioni reali'
 output: pdf_document
 header-includes:
   - \usepackage{titling}
   - \setlength{\droptitle}{-2cm}
   - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
   - \posttitle{\end{center}\vspace{-0.5cm}}
-  - \preauthor{\begin{center}\large}
+  - \preauthor{\begin{center}\large\vspace{-0.3cm}}
   - \postauthor{\end{center}\vspace{-1.5cm}}
 ---
 
@@ -21,7 +23,7 @@ library(tidyverse)
 library(vars)
 library(seasonal)
 
-data <- read.csv("../Dati/serie_sistemate_progetto_b.csv", row.names = 1)
+data <- read.csv("../Dati/dataset_progetto_b.csv", row.names = 1)
 data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
            start = c(1990, 1), frequency = 4)
 
@@ -91,12 +93,12 @@ df_final$tipo <- factor(
 
 # Grafico
 ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
-  geom_line(linewidth = 0.7) +
+  geom_line(linewidth = 0.4) +
   geom_vline(
     xintercept = 2014,
     linetype = "dashed",
     color = "black",
-    linewidth = 0.6
+    linewidth = 0.5
   ) +
   facet_grid(tipo ~ variabile, scales = "free_y") +
   scale_x_continuous(
@@ -143,13 +145,15 @@ par(
   cex.axis = 0.7
 )
 
+names <- c("Esportazioni", "Vendite", "Produzione Industriale")
+
 for (i in 1:3) {
 
   acf(train_diff[, i], lag.max = 36,
       main = "", ann = FALSE)
 
   title(
-    main = paste(colnames(train_diff)[i], "- ACF"),
+    main = paste(names[i], "- ACF"),
     line = 0.8,
     cex.main = 0.85
   )
@@ -165,7 +169,7 @@ for (i in 1:3) {
        main = "", ann = FALSE)
 
   title(
-    main = paste(colnames(train_diff)[i], "- PACF"),
+    main = paste(names[i], "- PACF"),
     line = 0.8,
     cex.main = 0.85
   )
@@ -186,14 +190,13 @@ par(mfrow = c(1, 1))
 ```
 
 Per le serie riguardanti le differenze di Esportazioni e Produzione Industriale si osservano valori di ACF decrescenti verso lo zero lungo più ritardi, e si osserva un decadimento immediato dei valori di PACF. Tali valori corrispondono ai comportamenti di modelli autoregressivi.
-Per la serie riguardante le differenze delle Vendite si osserva che i valori di ACF sono pressoché non significativi a qualsiasi lag, ma si nota che la PACF ha valore significativo attorno a 15 ritardi (circa 4 anni): potrebbe trattarsi di un risultato spurio dovuto al rumore o suggerire che le Vendite abbiano comportamenti isolati che si ripresentano a lungo termine
+Per la serie riguardante le differenze delle Vendite si osserva che i valori di ACF sono pressoché non significativi a qualsiasi lag, ma si nota che la PACF ha valore significativo attorno a 15 ritardi (circa 4 anni): potrebbe trattarsi di un risultato spurio dovuto al rumore o suggerire che le Vendite abbiano comportamenti isolati che si ripresentano a lungo termine.
 
-Si studiano quindi i valori delle funzioni di Cross-correlazione (grafici alla pagina successiva) delle tre serie.
+Si studiano quindi i valori delle funzioni di cross-correlazione (grafici alla pagina successiva) delle tre serie.
 
 Non sono rilevate cross-correlazioni di interesse tra indici di Esportazione e Vendite reali.
 
-Tra gli indici di Esportazione e di Produzione Industriale si nota invece una correlazione molto forte e cross-correlazioni significative ai lag -1 e 1: ciò significa che è identificata correlazione tra Esportazioni e Produzione del trimestre successivo, e tra Produzione ed Esportazioni del periodo seguente. Le cross-correlazioni identificate ai due lag potrebbero però essere espressione di rumore dovuta all'alta correlazione tra le variabili misurate nello stesso periodo.
-
+Tra gli indici di Esportazione e di Produzione Industriale si nota invece una correlazione molto forte e cross-correlazioni significative ai lag -1 e 1: ciò significa che è identificata correlazione tra Esportazioni e Produzione del trimestre successivo, e tra Produzione ed Esportazioni del periodo seguente. Si osserva anche significatività leggera al lag 2, indicando che la Produzione Industriale ha 
 Tra Vendite reali e Produzione Industriale si osserva un solo lag leggermente significativo: -2. Ciò significa che è individuata una correlazione tra il valore delle vendite effettuate in un trimestre e l'indice di produzione industriale misurato 6 mesi dopo. Si sottolinea però che ciò individua una semplice correlazione e non dovrebbe essere considerata implicazione di causalità.
 
 
@@ -295,7 +298,7 @@ print(coefficienti)
 ```
 Viene scelto provvisoriamente il modello VAR(3) suggerito dall'AIC, in quanto un ordine di regressione di 3 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
 Si prende di esempio l'equazione 
-$$ \Delta (X_t)_{Prod. \,Industriale} = d_t + \sum_{j = 1}^3A_j \; \Delta X_{t-j}+\epsilon_t$$
+$$ \Delta (X_t)_\textit{Prod. Industriale} = d_t + \sum_{j = 1}^3A_j \; \Delta X_{t-j}+\epsilon_t$$
 cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi tre ritardi delle tre differenze delle serie considerate.
 Tra i coefficienti stimati si evidenziano come significative al 5% le Esportazioni al lag 1 (Coefficiente: 0.376, P-value: 0.00549), le Vendite al lag 2 (Coefficiente: 0.712, P-value: 0.00098), e la Produzione Industriale stessa al lag 3 (Coefficiente: -0.425, P-value: 0.00346)
 

@@ -30,4 +30,4 @@ data <- data1 %>%
 head(data)
 tail(data)
 
-write.csv(data, "../Dati/serie_sistemate_progetto_b.csv")
+write.csv(data, "../Dati/dataset_progetto_b.csv")
