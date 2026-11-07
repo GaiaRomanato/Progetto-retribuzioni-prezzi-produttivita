@@ -2,13 +2,18 @@
 title: "Laboratorio 1"
 author: "I PILastri - Pivato, Fabris, Romanato, Bigon"
 output: pdf_document
+header-includes:
+  - \usepackage{titling}
+  - \setlength{\droptitle}{-2cm}
+  - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
+  - \posttitle{\end{center}\vspace{-0.5cm}}
+  - \preauthor{\begin{center}\large}
+  - \postauthor{\end{center}\vspace{-1.5cm}}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-
 
 ```{r include=FALSE, warnings=F}
 library(readr)
@@ -18,22 +23,22 @@ library(seasonal)
 
 data <- read.csv("../Dati/serie_sistemate_progetto_b.csv", row.names = 1)
 data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
-           start = c(1990, 1), 
-           frequency = 4)
+           start = c(1990, 1), frequency = 4)
 
-train <- window(data, start = c(1990, 1), end = c(2013, 4))
-test <- window(data, start = c(2014, 1))
+train <- window(data, start = c(1990, 1), end = c(2016, 4))
+test <- window(data, start = c(2017, 1))
 
 data_log = log(data)
-train_log <- window(data_log, start = c(1990, 1), end = c(2013, 4))
-test_log <- window(data_log, start = c(2014, 1))
+train_log <- window(data_log, start = c(1990, 1), end = c(2016, 4))
+test_log <- window(data_log, start = c(2017, 1))
 
 data_diff = diff(data_log)
-train_diff <- window(data_diff, start = c(1990, 1), end = c(2013, 4))
-test_diff <- window(data_diff, start = c(2014, 1))
+train_diff <- window(data_diff, start = c(1990, 1), end = c(2016, 4))
+test_diff <- window(data_diff, start = c(2017, 1))
 ```
 
-## PUNTO 1
+Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al secondo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.
+Le tre serie sono misurate su indici in riferimento all'anno 2015, tenendo così conto degli effetti dell'inflazione, dei cambi di prezzi e altre oscillazioni economiche naturali.
 
 ```{r echo=F}
 # Preparazione dei dati
@@ -117,18 +122,15 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
     panel.spacing = unit(1, "lines")
   )
 ```
+Le curve nella parte superiore rappresentano gli indici unitari con cui le tre quantità sono misurate espressi in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training a sinistra da quello di test a destra (Anno 2017).
 
-Il grafico mostra l’andamento delle tre serie storiche relative alla quantificazione di esportazioni di merci,  e produzione industriale in Italia.
+Le serie delle Esportazioni (rosso) evidenzia un trend crescente seppur volubile a innovazioni anche intense. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le sue prime differenze oscillano leggermente sopra lo zero con variazioni anche forti. 
 
-In particolare, le curve rosse indicano il compenso nominale per ora lavorata (Labour Compensation per Hour Worked, economia totale), le curve blu indicano i prezzi al consumo complessivi (CPI: All Items) - opportunamente destagionalizzati - e le curve verdi indicano la produttività reale per ora lavorata (Real GDP per Hour Worked, economia totale).
+Gli indici per le Vendite (blu) e per la Produzione Industriale (verde) risultano invece molto più stabili nel tempo, senza apparenti trend. Le prime differenze oscillano prevalentemente intorno allo zero per entrambe le serie, generalmente con variazioni molto ridotte.
 
-Le curve nella parte superiore sono espresse in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training, a sinistra, da quello di test, a destra.
+Si possono osservare in tutte le serie gli effetti della Pandemia COVID-19 attorno all'anno 2020, che hanno provocato oscillazioni estreme. Inoltre, per le Esportazioni e la Produzione Industriale si possono osservare gli effetti della Crisi Economica Globale del 2008, con conseguenti differenze negative forti ma meno rispetto a quelle provocate dal Covid.
 
-Le serie delle retribuzioni e dei prezzi evidenziano un trend crescente abbastanza regolare, soprattutto nella prima parte del campione. Questo trend crescente suggerisce una forte persistenza e una possibile non stazionarietà delle serie. Le prime differenze oscillano prevalentemente intorno allo zero, mostrando una variabilità relativamente contenuta, sebbene siano presenti alcuni picchi positivi e negativi. In particolare, si notano anomalie marcate intorno al 2020, conseguenze della pandemia COVID.
-
-La produttività presenta invece un andamento più stabile rispetto alle altre due variabili. In scala logaritmica si osserva una crescita moderata nella prima parte del campione, seguita da oscillazioni contenute intorno a un livello relativamente costante. La persistenza appare quindi meno marcata rispetto a quella delle retribuzioni e dei prezzi. Le prime differenze oscillano prevalentemente intorno allo zero, senza evidenziare un andamento sistematico. Come nelle curve precedenti, si notano anomalie intorno all'anno 2020.
-
-Nel complesso, sembra che le retribuzioni e i prezzi siano più legate tra loro rispetto alla produttività, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
+Nel complesso, Vendite e Produzione appaiono più legate tra loro rispetto alle Esportazioni, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
 
 ```{r echo=F}
 par(
@@ -186,6 +188,14 @@ par(mfrow = c(1, 1))
 Per le serie riguardanti le differenze di Esportazioni e Produzione Industriale si osservano valori di ACF decrescenti verso lo zero lungo più ritardi, e si osserva un decadimento immediato dei valori di PACF. Tali valori corrispondono ai comportamenti di modelli autoregressivi.
 Per la serie riguardante le differenze delle Vendite si osserva che i valori di ACF sono pressoché non significativi a qualsiasi lag, ma si nota che la PACF ha valore significativo attorno a 15 ritardi (circa 4 anni): potrebbe trattarsi di un risultato spurio dovuto al rumore o suggerire che le Vendite abbiano comportamenti isolati che si ripresentano a lungo termine
 
+Si studiano quindi i valori delle funzioni di Cross-correlazione (grafici alla pagina successiva) delle tre serie.
+
+Non sono rilevate cross-correlazioni di interesse tra indici di Esportazione e Vendite reali.
+
+Tra gli indici di Esportazione e di Produzione Industriale si nota invece una correlazione molto forte e cross-correlazioni significative ai lag -1 e 1: ciò significa che è identificata correlazione tra Esportazioni e Produzione del trimestre successivo, e tra Produzione ed Esportazioni del periodo seguente. Le cross-correlazioni identificate ai due lag potrebbero però essere espressione di rumore dovuta all'alta correlazione tra le variabili misurate nello stesso periodo.
+
+Tra Vendite reali e Produzione Industriale si osserva un solo lag leggermente significativo: -2. Ciò significa che è individuata una correlazione tra il valore delle vendite effettuate in un trimestre e l'indice di produzione industriale misurato 6 mesi dopo. Si sottolinea però che ciò individua una semplice correlazione e non dovrebbe essere considerata implicazione di causalità.
+
 
 ```{r echo=F}
 par(
@@ -218,13 +228,6 @@ mtext("Cross-correlations delle serie differenziate",
 
 par(mfrow = c(1, 1))
 ```
-Non sono rilevate cross-correlazioni di interesse tra indici di Esportazione e Vendite reali.
-
-Tra gli indici di Esportazione e di Produzione Industriale si nota invece una correlazione molto forte e cross-correlazioni significative ai lag -1 e 1: ciò significa che è identificata correlazione tra Esportazioni e Produzione del trimestre successivo, e tra Produzione ed Esportazioni del periodo seguente. Le cross-correlazioni identificate ai due lag potrebbero però essere espressione di rumore dovuta all'alta correlazione tra le variabili misurate nello stesso periodo.
-
-Tra Vendite reali e Produzione Industriale si osserva un solo lag significativo: -2. Ciò significa che è individuata una correlazione tra il valore delle vendite effettuate in un trimestre e l'indice di produzione industriale misurato 6 mesi dopo. Si sottolinea però che ciò individua una semplice correlazione e non dovrebbe essere considerata implicazione di causalità.
-
-## PUNTO 2
 
 ```{r echo = FALSE, include = FALSE}
 library(vars)
@@ -248,15 +251,10 @@ summary(var_aic)
 
 ```
 
-| AIC(n) | BIC(n) | HQ(n) | FPE(n) |
-|:------:|:------:|:-----:|:------:|
-|   3    |   1    |   2   |   3    |
-
-La selezione dell'ordine del VAR è stata effettuata confrontando principalmente i criteri informativi AIC e BIC, considerando un massimo di otto ritardi, corrispondenti a due anni data la frequenza trimestrale delle osservazioni.
+Si procede a individuare un modello VAR che meglio rappresenti l'interazione delle tre serie studiate. Per fare ciò si mettono a confronto i criteri informativi AIC e BIC risultanti dall'utilizzo di ritardi differenti per la costruzione del VAR. Sono considerati un massimo di otto ritardi, corrispondenti a due anni secondo la frequenza trimestrale delle osservazioni.
 
 Il criterio AIC suggerisce di considerare 3 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine.
 
-## PUNTO 3
 
 ```{r echo=F, include = F}
 
@@ -295,10 +293,10 @@ coefficienti <- coef(summary(equazione))
 print(coefficienti)
 
 ```
-È stato scelto provvisoriamente il modello VAR(3) suggerito dall'AIC, in quanto un ordine di regressione di 3 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
+Viene scelto provvisoriamente il modello VAR(3) suggerito dall'AIC, in quanto un ordine di regressione di 3 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
 Si prende di esempio l'equazione 
 $$ \Delta (X_t)_{Prod. \,Industriale} = d_t + \sum_{j = 1}^3A_j \; \Delta X_{t-j}+\epsilon_t$$
-cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale rispetto ai primi tre ritardi delle tre serie considerate.
+cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi tre ritardi delle tre differenze delle serie considerate.
 Tra i coefficienti stimati si evidenziano come significative al 5% le Esportazioni al lag 1 (Coefficiente: 0.376, P-value: 0.00549), le Vendite al lag 2 (Coefficiente: 0.712, P-value: 0.00098), e la Produzione Industriale stessa al lag 3 (Coefficiente: -0.425, P-value: 0.00346)
 
 Si può quindi concludere che la produzione Industriale ad un dato trimestre è influenzata negativamente dallo stesso valore di produzione di 9 mesi prima, molto positivamente dalla quantità di vendite relative a 6 mesi prima, e positivamente dalle Esportazioni del trimestre precedente.
