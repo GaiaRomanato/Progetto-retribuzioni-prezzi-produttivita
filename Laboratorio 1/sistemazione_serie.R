@@ -1,24 +1,33 @@
-library(fredr)
-library(readr)
-fredr_set_key("3726b1e53701c00cdd0eb1184ee0f7c3")
+library(dplyr)
+library(lubridate)
 
-data1 = fredr(
-    series_id = "ITACPIALLQINMEI",
-    observation_start = as.Date("1995-01-01"),
-    observation_end = as.Date("2025-12-31")
-)
+data1 <- read.csv("../Dati/NAEXKP06ITQ661S.csv")
+data1 <- data1 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02"))) %>%
+  rename(date = observation_date, esportazioni = NAEXKP06ITQ661S)
 
-data2 <- read_csv("../Dati/labour_productivity.csv")
-data3 <- read_csv("../Dati/hourly compensations.csv")
+data2 <- read.csv("../Dati/ITASLRTTO01IXEBSAQ.csv")
+data2 <- data2 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02"))) %>%
+  rename(date = observation_date, vendite = ITASLRTTO01IXEBSAQ)
 
-names(data1)   # CPI
-names(data2)   # Labour productivity
-names(data3)   # Labour compensation
+data3 <- read.csv("../Dati/ITAPROINDQISMEI.csv")
+data3 <- data3 %>%
+  mutate(observation_date = as.Date(observation_date)) %>%
+  filter(between(observation_date, as.Date("1989-12-31"), as.Date("2023-07-02")))%>%
+  rename(date = observation_date, prod_industriale = ITAPROINDQISMEI)
 
-data <- as.data.frame(cbind(data2$`TIME PERIOD`[1:121], data1$value,
-                            data2$`Labour Productivity (per hours worked), index (MNA.Q.Y.IT.W0.S1.S1._Z.LPR_HW._Z._T._Z.IX.LR.N)`[1:121],
-                            data3$`Hourly compensation, index (MNA.Q.Y.IT.W2.S1.S1._Z.COM_HW._Z._T._Z.IX.V.N)`[1:121]))
-colnames(data) = c("period", "cpi", "labour.productivity", "labour.compensation")
+# Intersezione delle date e costruzione del dataframe
+data <- data1 %>%
+  inner_join(data2, by = "date") %>%
+  inner_join(data3, by = "date") %>%
+  arrange(date) %>%
+  mutate(trimestre = paste0(year(date), " Q", quarter(date))) %>%
+  dplyr::select(trimestre, esportazioni, vendite, prod_industriale)
+
 head(data)
+tail(data)
 
-write.csv(data, "../Dati/dataset_progetto_c.csv")
+write.csv(data, "../Dati/dataset.csv")
