@@ -125,7 +125,7 @@ ggplot(df_final, aes(x = time, y = valore, color = variabile)) +
     panel.spacing = unit(1, "lines")
   )
 ```
-Le curve nella parte superiore del grafico rappresentano gli indici unitari con cui le tre quantità sono misurate espressi in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze. La linea verticale tratteggiata separa il dataset di training a sinistra da quello di test a destra; infatti, il dataset è diviso nel modo seguente: 
+Le curve nella parte superiore del grafico mostrano i livelli delle tre serie in scala logaritmica, mentre quelle nella parte inferiore rappresentano le rispettive prime differenze logaritmiche. La linea verticale tratteggiata separa il dataset di training a sinistra da quello di test a destra; infatti, il dataset è diviso nel modo seguente: 
 
 - **Training set**: dal 1990 (Q1) al 2016 (Q4), per un totale di 108 osservazioni;
 - **Test set**: dal 2017 (Q1) al 2023 (Q3), per un totale di 27 osservazioni.
