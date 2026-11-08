@@ -248,8 +248,8 @@ selezione$criteria
 # Ordini suggeriti da AIC e BIC
 selezione$selection
 
-var_aic <- VAR(train_diff, p = 3, type = "const")
-# var_bic <- VAR(train_diff, p = 2, type = "const")
+var_aic <- VAR(train_diff, p = 2, type = "const")
+# var_bic <- VAR(train_diff, p = 1, type = "const")
 
 summary(var_aic)
 # summary(var_bic)
@@ -258,7 +258,7 @@ summary(var_aic)
 
 Si procede a individuare un modello VAR che meglio rappresenti l'interazione delle tre serie studiate. Per fare ciò si mettono a confronto i criteri informativi AIC e BIC risultanti dall'utilizzo di ritardi differenti per la costruzione del VAR. Sono considerati un massimo di otto ritardi, corrispondenti a due anni secondo la frequenza trimestrale delle osservazioni.
 
-Il criterio AIC suggerisce di considerare 3 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine.
+Il criterio AIC suggerisce di considerare 2 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine.
 
 
 ```{r echo=F, include = F}
@@ -284,11 +284,11 @@ summary(var_aic)
 # summary(var_bic)
 
 
-# 3. Estrazione dell'equazione delle retribuzioni
+# 3. Estrazione dell'equazione della produzione industriale
 
 equazione <- var_finale$varresult[["prod_industriale"]]
 
-cat("\nCoefficienti dell'equazione delle retribuzioni:\n")
+cat("\nCoefficienti dell'equazione della Produzione Industriale:\n")
 print(summary(equazione))
 
 
@@ -298,10 +298,11 @@ coefficienti <- coef(summary(equazione))
 print(coefficienti)
 
 ```
-Viene scelto provvisoriamente il modello VAR(3) suggerito dall'AIC, in quanto un ordine di regressione di 3 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
+Viene scelto provvisoriamente il modello VAR(2) suggerito dall'AIC, in quanto un ordine di regressione di 2 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
 Si prende di esempio l'equazione 
-$$ \Delta (X_t)_\textit{Prod. Industriale} = d_t + \sum_{j = 1}^3A_j \; \Delta X_{t-j}+\epsilon_t$$
-cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi tre ritardi delle tre differenze delle serie considerate.
-Tra i coefficienti stimati si evidenziano come significative al 5% le Esportazioni al lag 1 (Coefficiente: 0.376, P-value: 0.00549), le Vendite al lag 2 (Coefficiente: 0.712, P-value: 0.00098), e la Produzione Industriale stessa al lag 3 (Coefficiente: -0.425, P-value: 0.00346)
+$$ \Delta (X_t)_\textit{Prod. Industriale} = d_t + \sum_{j = 1}^2A_j \; \Delta X_{t-j}+\epsilon_t$$
+cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi due ritardi delle tre differenze delle serie considerate.
 
-Si può quindi concludere che la produzione Industriale ad un dato trimestre è influenzata negativamente dallo stesso valore di produzione di 9 mesi prima, molto positivamente dalla quantità di vendite relative a 6 mesi prima, e positivamente dalle Esportazioni del trimestre precedente.
+Tra i coefficienti stimati si evidenzia che l'effetto più significativo ($\alpha = 5\%$) sia la stessa Produzione Industriale al trimestre precedente (Coefficiente: 0.446, P-value: 0.00028), ma si notano altri effetti seppur più deboli: le Esportazioni al lag 1 (Coefficiente: 0.221, P-value: 0.01704) e al lag 2 (Coefficiente: -0.201, P-value: 0.02803), e le Vendite al lag 2 (Coefficiente: 0.348, P-value: 0.02005).
+
+Si può quindi concludere che il volume di produzione industriale ad un dato trimestre ha una componente autoregressiva molto importante al trimestre precedente, ma è anche influenzato positivamente dalla quantità di vendite relative a 6 mesi prima. Per quanto riguarda le esportazioni, emerge un effetto positivo nel periodo precedente ma negativo a due periodi di distanza, con i coefficienti che sommano poco sopra lo zero (0.02). La relazione tra esportazioni e produzione industriale potrebbe indicare un fenomeno oscillatorio che porta però nel tempo ad un'influenza trascurabile.
