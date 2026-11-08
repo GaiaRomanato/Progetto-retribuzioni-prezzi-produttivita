@@ -40,9 +40,10 @@ test_diff <- window(data_diff, start = c(2017, 1))
 ```
 
 Sono prese in esame le serie storiche relative al volume economico di esportazioni di merci e servizi, di vendite al dettaglio e di produzione industriale (edilizia esclusa) in Italia, registrati trimestralmente dal primo trimestre del 1990 al terzo trimestre del 2023. Si vuole studiare come tali indici si comportino individualmente, come interagiscano tra loro allo stesso periodo e a distanza di tempo, e si vuole individuare eventuali modelli che caratterizzino le tre serie in modo appropriato.  
-Le serie sono espresse sotto forma di numeri indice, con anno base 2015 = 100 (ad eccezione delle vendite al dettaglio, per le quali viene utilizzata la base Eurostat); su di esse è stata applicata una trasformazione logaritmica, al fine di rendere più stabile la variabilità delle serie, attenuare eventuali fenomeni di eteroschedasticità e facilitare l’interpretazione delle variazioni in termini relativi.
+Le serie sono espresse sotto forma di numeri indice, con anno base 2015 = 100 (ad eccezione delle vendite al dettaglio, per le quali viene utilizzata la base Eurostat); su di esse è stata applicata una trasformazione logaritmica, al fine di rendere più stabile la variabilità delle serie, attenuare eventuali fenomeni di eteroschedasticità e facilitare l’interpretazione delle variazioni in termini relativi.  
+Maggiori dettagli sui dati utilizzati sono disponibili nella scheda dati allegata.
 
-```{r echo=F}
+```{r echo=F, out.width="85%", fig.align="center"}
 # Preparazione dei dati
 prepare_data <- function(df, tipo, start = c(1990, 1)) {
   df_plot <- as.data.frame(df)
@@ -137,7 +138,7 @@ Si possono osservare in tutte le serie gli effetti della Pandemia COVID-19 attor
 
 Nel complesso, Vendite e Produzione appaiono più legate tra loro rispetto alle Esportazioni, ma è necessario analizzare correlazioni e cross-correlazioni per trarre conclusioni più forti.
 
-```{r echo=F}
+```{r echo=F, out.width="85%", fig.align="center"}
 par(
   mfrow = c(3, 2),
   mar = c(3.8, 3.8, 2.2, 1),
@@ -202,7 +203,7 @@ Tra gli indici di Esportazione e di Produzione Industriale si nota invece una co
 Tra Vendite reali e Produzione Industriale si osserva un solo lag leggermente significativo: -2. Ciò significa che è individuata una correlazione tra il valore delle vendite effettuate in un trimestre e l'indice di produzione industriale misurato 6 mesi dopo. Si sottolinea però che ciò individua una semplice correlazione e non dovrebbe essere considerata implicazione di causalità.
 
 
-```{r echo=F, out.width="80%", fig.align="center"}
+```{r echo=F, out.width="65%", fig.align="center"}
 par(
   mfrow = c(3, 1),
   mar = c(3.8, 3.8, 2.2, 1),
@@ -258,7 +259,7 @@ summary(var_aic)
 
 Si procede a individuare un modello VAR che meglio rappresenti l'interazione delle tre serie studiate. Per fare ciò si mettono a confronto i criteri informativi AIC e BIC risultanti dall'utilizzo di ritardi differenti per la costruzione del VAR. Sono considerati un massimo di otto ritardi, corrispondenti a due anni secondo la frequenza trimestrale delle osservazioni.
 
-Il criterio AIC suggerisce di considerare 2 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine.
+Il criterio AIC suggerisce di considerare 2 ordini di autoregressione, mentre il BIC - in quanto criterio che premia la parsimonia del modello risultante penalizzando numerosità alte di parametri - suggerisce un solo ordine. In questa fase dell'analisi ci limitiamo a questo criterio di scelta; prossimamente ci occuperemo anche di valutare la bontà previsiva sui dati di test che abbiamo finora tralasciato.
 
 
 ```{r echo=F, include = F}
@@ -298,11 +299,13 @@ coefficienti <- coef(summary(equazione))
 print(coefficienti)
 
 ```
-Viene scelto provvisoriamente il modello VAR(2) suggerito dall'AIC, in quanto un ordine di regressione di 2 include un numero accettabile di parametri (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
+Viene scelto provvisoriamente il modello VAR(2) suggerito dall'AIC, in quanto un ordine di regressione di 2 include un numero accettabile di parametri pari a 21 (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
 Si prende di esempio l'equazione 
-$$ \Delta (X_t)_\textit{Prod. Industriale} = d_t + \sum_{j = 1}^2A_j \; \Delta X_{t-j}+\epsilon_t$$
-cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi due ritardi delle tre differenze delle serie considerate.
+$$\Delta y_{1,t}^{(\text{Produzione})} = \phi_{0,1} + \sum_{j=1}^2 \left( \phi_{j,11} \Delta y_{1,t-j}^{(\text{Produzione})} + \phi_{j,12} \Delta y_{2,t-j}^{(\text{Vendite})} + \phi_{j,13} \Delta y_{3,t-j}^{(\text{Esportazioni})} \right) + \varepsilon_{1,t}$$
+cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi due ritardi delle tre differenze delle serie considerate. Nota: si è inclusa la sola costante deterministica (intercetta), in quanto le serie differenziate oscillano attorno a una media costante senza trend residui evidenti.
 
-Tra i coefficienti stimati si evidenzia che l'effetto più significativo ($\alpha = 5\%$) sia la stessa Produzione Industriale al trimestre precedente (Coefficiente: 0.446, P-value: 0.00028), ma si notano altri effetti seppur più deboli: le Esportazioni al lag 1 (Coefficiente: 0.221, P-value: 0.01704) e al lag 2 (Coefficiente: -0.201, P-value: 0.02803), e le Vendite al lag 2 (Coefficiente: 0.348, P-value: 0.02005).
+Tra i coefficienti stimati si evidenzia che l'effetto più significativo ($\alpha = 5\%$) sia quello della stessa Produzione Industriale al trimestre precedente (Coefficiente: 0.446, P-value: 0.00028), ma si notano altri effetti seppur più deboli: le Esportazioni al lag 1 (Coefficiente: 0.221, P-value: 0.01704) e al lag 2 (Coefficiente: -0.201, P-value: 0.02803), e le Vendite al lag 2 (Coefficiente: 0.348, P-value: 0.02005).
 
-Si può quindi concludere che il volume di produzione industriale ad un dato trimestre ha una componente autoregressiva molto importante al trimestre precedente, ma è anche influenzato positivamente dalla quantità di vendite relative a 6 mesi prima. Per quanto riguarda le esportazioni, emerge un effetto positivo nel periodo precedente ma negativo a due periodi di distanza, con i coefficienti che sommano poco sopra lo zero (0.02). La relazione tra esportazioni e produzione industriale potrebbe indicare un fenomeno oscillatorio che porta però nel tempo ad un'influenza trascurabile.
+Si può quindi concludere che il volume di produzione industriale ad un dato trimestre ha una componente autoregressiva molto importante al trimestre precedente, ma è anche influenzato positivamente dalla quantità di vendite relative a 6 mesi prima. Per quanto riguarda le esportazioni, emerge un effetto positivo nel periodo precedente ma negativo a due periodi di distanza, con i coefficienti che sommano poco sopra lo zero (0.02). La relazione tra esportazioni e produzione industriale potrebbe indicare un fenomeno oscillatorio che porta però nel tempo ad un'influenza trascurabile.  
+
+*Nota: l'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice in R, nella formattazione del documento in R Markdown e LaTeX, e come ausilio nella discussione e interpretazione dei risultati econometrici. La scelta dei metodi statistici, la scelta e l'analisi dei dati e le interpretazioni di grafici e modelli restano prevalentemente a cura degli autori.*
