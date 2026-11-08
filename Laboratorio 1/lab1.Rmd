@@ -299,7 +299,7 @@ coefficienti <- coef(summary(equazione))
 print(coefficienti)
 
 ```
-Viene scelto provvisoriamente il modello VAR(2) suggerito dall'AIC, in quanto un ordine di regressione di 2 include un numero accettabile di parametri pari a 21 (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
+Viene scelto provvisoriamente il modello VAR(2) suggerito dall'AIC, in quanto un ordine di regressione di 2 comporta un numero accettabile di parametri pari a 21 più i 6 della matrice di varianza degli errori (e perciò la parsimonia del BIC non è prioritaria) e al tempo stesso permette di tenere in considerazione alcune evidenze notate nei grafici delle CCF.
 Si prende di esempio l'equazione 
 $$\Delta y_{1,t}^{(\text{Produzione})} = \phi_{0,1} + \sum_{j=1}^2 \left( \phi_{j,11} \Delta y_{1,t-j}^{(\text{Produzione})} + \phi_{j,12} \Delta y_{2,t-j}^{(\text{Vendite})} + \phi_{j,13} \Delta y_{3,t-j}^{(\text{Esportazioni})} \right) + \varepsilon_{1,t}$$
 cioè si mettono in evidenza le differenze della serie storica riguardante la Produzione Industriale in relazione ai primi due ritardi delle tre differenze delle serie considerate. Nota: si è inclusa la sola costante deterministica (intercetta), in quanto le serie differenziate oscillano attorno a una media costante senza trend residui evidenti.
