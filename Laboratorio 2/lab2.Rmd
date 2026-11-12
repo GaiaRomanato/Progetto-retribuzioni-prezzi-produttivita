@@ -78,30 +78,28 @@ title(main = "CCF Residui: Vendite - Prod. Industriale", line = 0.8, cex.main = 
 mtext("Cross-correlazioni tra i residui", outer = TRUE, side = 3, cex = 1, font = 2)
 par(mfrow = c(1, 1))
 ```
-Dall'analisi grafica delle funzioni di autocorrelazione (ACF) dei residui di ciascuna equazione non emergono in generale picchi particolarmente significativi. Si nota però un'ACF negativa leggermente significativa al quarto ritardo per la Produzione Industriale.
+Dall'analisi grafica delle funzioni di autocorrelazione (ACF) dei residui di ciascuna equazione non emergono in generale picchi particolarmente significativi. Si nota però un'ACF negativa leggermente significativa al quarto ritardo per la Produzione Industriale: potrebbe essere provocata da una stagionalità annuale non rilevata in fase di preprocessing, o da rumori spuri.
 Dai cross-correlogrammi non sono evidenziate alcune cross-correlazioni significative. La correlazione pura tra i residui di Esportazioni e Produzione Industriale è ammessa e non segnala possibili problematiche. 
-I test formali di autocorrelazione univariata (Ljung-Box) e multivariata (Portmanteau asintotico e Breusch-Godfrey) sono riassunti nella tabella seguente, dove l'ipotesi nulla è l'assenza di autocorrelazione nei residui.
+I test formali di autocorrelazione univariata (Ljung-Box) e multivariata (Portmanteau asintotico e Breusch-Godfrey) sono riassunti nella tabella seguente, dove l'ipotesi nulla H0 è l'assenza di autocorrelazione nei residui.
 
 ```{r echo=FALSE}
 # Test di autocorrelazione multivariata
-pt_test <- serial.test(var_fit, lags.pt = 12, type = "PT.asymptotic")
-bg_test <- serial.test(var_fit, lags.bg = 4, type = "BG")
+pt_test <- serial.test(var_fit, lags.pt = 8, type = "PT.asymptotic")
 
-# Test univariati Ljung-Box (lag 12)
-lb_esp  <- Box.test(res[, "esportazioni"], lag = 12, type = "Ljung-Box")
-lb_ven  <- Box.test(res[, "vendite"], lag = 12, type = "Ljung-Box")
-lb_prod <- Box.test(res[, "prod_industriale"], lag = 12, type = "Ljung-Box")
+# Test univariati Ljung-Box (lag 8)
+lb_esp  <- Box.test(res[, "esportazioni"], lag = 8, type = "Ljung-Box")
+lb_ven  <- Box.test(res[, "vendite"], lag = 8, type = "Ljung-Box")
+lb_prod <- Box.test(res[, "prod_industriale"], lag = 8, type = "Ljung-Box")
 
 alpha <- 0.05
 test_autocorr <- list(
   "Portmanteau Multivariato" = pt_test$serial,
-  "Breusch-Godfrey Multivariato" = bg_test$serial,
   "Ljung-Box (Esportazioni)" = lb_esp,
   "Ljung-Box (Vendite)" = lb_ven,
   "Ljung-Box (Prod. Ind.)" = lb_prod
 )
 
-tab_autocorr <- data.frame( lag = c(12,4,12,12,12),
+tab_autocorr <- data.frame( lag = rep(8,4),
   Statistica = sapply(test_autocorr, function(x) round(as.numeric(x$statistic),3)),
   df = sapply(test_autocorr, function(x) as.numeric(x$parameter)),
   p_value = sapply(test_autocorr, function(x) round(as.numeric(x$p.value),5)),
@@ -184,7 +182,7 @@ legend("topright", legend = c("Portmanteau Asintotico", "Breusch-Godfrey (LM)", 
 grid(col = "lightgray", lty = "dotted")
 
 ```
-Dal grafico riguardante la Produzione Industriale si può supporre che dal quarto lag in poi (oltre un anno di misurazioni) si possa rilevare una componente autoregressiva significativa (fenomeno già osservato attraverso le ACF). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.
+Dal grafico riguardante la Produzione Industriale si può supporre che dal quarto lag in poi (oltre un anno di misurazioni) si possa rilevare una componente autoregressiva significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.
 
 Dal grafico riguardante la Diagnostica Multivariata il fatto che entrambi i test siano significativi fino al quarto ritardo, e che il test BG sia significativo a qualsiasi ritardo, indicano che effettivamente non tutti i fenomeni di cross-correlazione sono colti adeguatamente da un modello VAR(2)
 
@@ -287,7 +285,7 @@ colnames(tab_compare) <- c("Direzione del Test Bivariato", "F", "p-value", "Deci
 kable(tab_compare, caption = "Confronto dei test direzionali di Granger bivariati", booktabs = TRUE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
-
+Dai test bivariati risulta che 
 
 
 ### Ruolo dell'Informazione Contenuta nella Terza Variabile
