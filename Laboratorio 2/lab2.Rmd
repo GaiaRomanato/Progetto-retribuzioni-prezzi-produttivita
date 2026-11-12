@@ -37,10 +37,12 @@ test_diff  <- window(data_diff, start = c(2017, 1))
 # Stima del modello VAR(2) selezionato in base all'AIC nel Laboratorio 1
 var_fit <- VAR(train_diff, p = 2, type = "const")
 ```
-Per verificare l'adeguatezza dinamica del modello VAR(2) stimato nel laboratorio precedente, si analizzano la struttura dei residui univariati e le cross-correlazioni contemporanee e ritardate tra le equazioni.
+Per verificare l'adeguatezza dinamica del modello VAR(2) stimato nel laboratorio precedente, se ne analizzano i residui tramite i grafici delle correlazioni (ACF) e cross-correlazioni (CCF).
 
 ```{r echo=FALSE, out.width="85%", fig.align="center"}
-res <- residuals(var_fit)
+res <- ts(residuals(var_fit), 
+          end = end(train_diff), 
+          frequency = frequency(train_diff))
 
 par(mfrow = c(3, 2), mar = c(3.8, 3.8, 2.2, 1), oma = c(0, 0, 2, 0),
     mgp = c(2, 0.8, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
@@ -60,7 +62,7 @@ mtext("Diagnostica univariata dei residui", outer = TRUE, side = 3, cex = 1, fon
 par(mfrow = c(1, 1))
 ```
 
-```{r echo=FALSE, out.width="85%", fig.align="center"}
+```{r echo=FALSE, out.width="65%", fig.align="center"}
 par(mfrow = c(3, 1), mar = c(3.8, 3.8, 2.2, 1), oma = c(0, 0, 2, 0),
     mgp = c(2, 0.8, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
 
