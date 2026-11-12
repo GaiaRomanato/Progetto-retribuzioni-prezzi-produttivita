@@ -277,7 +277,7 @@ tab_compare <- data.frame(
   pval_Biv = c(round(gb_esp_ven$`Pr(>F)`[2], 4), round(gb_esp_prod$`Pr(>F)`[2], 4),
                round(gb_ven_esp$`Pr(>F)`[2], 4), round(gb_ven_prod$`Pr(>F)`[2], 4),
                round(gb_prod_esp$`Pr(>F)`[2], 4), round(gb_prod_ven$`Pr(>F)`[2], 4)),
-  Dec_Biv = c("Non rigetto", "Non rigetto", "Rigetto H0", "Rigetto H0", "Non rigetto", "Non rigetto")
+  Dec_Biv = c("Non rigetto", "Rigetto H0", "Non rigetto", "Rigetto H0", "Rigetto H0", "Non rigetto")
 )
 
 colnames(tab_compare) <- c("Direzione del Test Bivariato", "F", "p-value", "Decisione")
@@ -285,6 +285,7 @@ colnames(tab_compare) <- c("Direzione del Test Bivariato", "F", "p-value", "Deci
 kable(tab_compare, caption = "Confronto dei test direzionali di Granger bivariati", booktabs = TRUE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
+
 
 
 ### Ruolo dell'Informazione Contenuta nella Terza Variabile
