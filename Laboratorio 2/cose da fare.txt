@@ -1,0 +1,16 @@
+ASPETTI GRAFICI
+- modificare nei grafici dei residui (pagina 1) l'anno che va da 0 a 100
+- grafici test di ljung-box: troncare a 12 o 15 o 16 lag (a discrezione di chi modifica)
+- sistemare output autovalori della matrice compagna per stabilità del VAR(2)
+
+ASPETTI DEI TEST
+- diminuire lag nella tabella dei test portmanteau ljung box
+- levare test di breusch-godfrey
+- aggiungere formule delle ipotesi nulle dei vari test?
+- controllare se è sensato la roba là dei test asimmetria curtosi ecc
+
+AGGIUNTE
+- considerare di fare il grafico dei residui al quadrato
+
+INTERPRETAZIONI
+- spiegare meglio il test arch, che testa l'autocorrelazione dei residui al quadrato, ma la usiamo per testare eteroschedasticità
