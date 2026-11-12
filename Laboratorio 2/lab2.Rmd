@@ -79,8 +79,9 @@ mtext("Cross-correlazioni tra i residui", outer = TRUE, side = 3, cex = 1, font 
 par(mfrow = c(1, 1))
 ```
 Dall'analisi grafica delle funzioni di autocorrelazione (ACF) dei residui di ciascuna equazione non emergono in generale picchi particolarmente significativi. Si nota però un'ACF negativa leggermente significativa al quarto ritardo per la Produzione Industriale: potrebbe essere provocata da una stagionalità annuale non rilevata in fase di preprocessing, o da rumori spuri.
-Dai cross-correlogrammi non sono evidenziate alcune cross-correlazioni significative. La correlazione pura tra i residui di Esportazioni e Produzione Industriale è ammessa e non segnala possibili problematiche. 
-I test formali di autocorrelazione univariata (Ljung-Box) e multivariata (Portmanteau asintotico e Breusch-Godfrey) sono riassunti nella tabella seguente, dove l'ipotesi nulla H0 è l'assenza di autocorrelazione nei residui.
+Dai cross-correlogrammi non sono evidenziate alcune cross-correlazioni significative. La correlazione pura tra i residui di Esportazioni e Produzione Industriale è ammessa e non segnala possibili problematiche.  
+Si testa ora l'assenza di autocorrelazione tra i residui del modello. Per ciascuna equazione del modello si applica il test di Ljung-Box, la cui ipotesi nulla $H_0: \rho_1 = \dots = \rho_k = 0$ stabilisce l'assenza di autocorrelazione fino al ritardo $k$. A livello di sistema, si conduce il test Portmanteau asintotico per verificare l'ipotesi nulla multivariata $H_0: \mathbf{C}_1 = \dots = \mathbf{C}_k = \mathbf{0}$, ovvero la nullità delle matrici di autocorrelazione per l'intero sistema fino al ritardo $k$. I risultati sono riassunti nella tabella seguente.
+<!-- Vengono condotti dei test formali sull'assenza di autocorrelazione tra i residui: si utilizza il test di Ljung-Box che testa separatamente per ciascuna equazione del modello l'ipotesi nulla $H_0: \rho_1 = \dots = \rho_k = 0$, ovvero la nullità dei coefficienti di autocorrelazione fino al ritardo $k$; si conduce inoltre il test di Portmanteau asintotico per testare $H_0: C_1 = \dots = C_k = \mathbf{0}$, ovvero la nullità delle matrici di autocorrelazione per l'intero sistema fino al ritardo $k$. I risultati sono riassunti nella tabella seguente. -->
 
 ```{r echo=FALSE}
 # Test di autocorrelazione multivariata
@@ -116,70 +117,64 @@ kable(tab_autocorr, caption = "Test di autocorrelazione sui residui",
   booktabs = TRUE,escape = FALSE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
-Si osserva che l'assunzione di assenza di autocorrelazione nel multivariato è rifiutata dal test BG ma non dal Portmanteau, mentre l'assunzione nell'univariato è rifiutata per la sola Produzione Industriale. Per analizzare più approfonditamente tali risultati si osservano i seguenti grafici di diagnostica.
+
+Si osserva che a livello univariato l'assunzione di incorrelazione è rifiutata dai test di Ljung-Box per la sola Produzione Industriale, mentre a livello multivariato il test di Portmanteau non rifiuta l'incorrelazione. Per analizzare più approfonditamente tali risultati si osservano i seguenti grafici di diagnostica.
 
 ```{r echo=FALSE}
 
 res <- residuals(var_fit)
 
-# GRAFICO DIAGNOSTICO LJUNG-BOX UNIVARIATO
-
-max_lag <- 20
+# TEST LJUNG-BOX UNIVARIATO
+max_lag <- 16
 lags <- 1:max_lag
-vars_names <- colnames(res)
 
 pval_lb <- matrix(NA, nrow = max_lag, ncol = 3)
-colnames(pval_lb) <- c("Esportazioni", "Vendite al dettaglio", "Produzione industriale")
+colnames(pval_lb) <- c("Esportazioni", "Vendite al dettaglio",
+                       "Produzione industriale")
 
 for (j in 1:3) {
   for (h in 1:max_lag) {
-    pval_lb[h, j] <- Box.test(res[, j], lag = h, type = "Ljung-Box")$p.value
+    pval_lb[h, j] <- Box.test(res[, j], lag = h,
+                              type = "Ljung-Box")$p.value
   }
 }
 
-# Grafico dei p-value Ljung-Box per equazione
-par(mfrow = c(3, 1), mar = c(3.5, 4, 2, 1), oma = c(0, 0, 2, 0), mgp = c(2, 0.7, 0))
+# TEST PORTMANTEAU MULTIVARIATO
+lags_multi <- (var_fit$p + 1):16
+pval_pt <- numeric(length(lags_multi))
+
+for (i in seq_along(lags_multi)) {
+  pt_res <- serial.test(var_fit, lags.pt = lags_multi[i],
+                        type = "PT.asymptotic")
+  pval_pt[i] <- pt_res$serial$p.value
+}
+
+# GRAFICI INSIEME
 colors <- c("#D73027", "#2878B5", "#238B45")
 
+par(mfrow = c(2, 2), mar = c(3.5, 4, 2.5, 1),
+    oma = c(0, 0, 2, 0), mgp = c(2, 0.7, 0))
+
 for (j in 1:3) {
-  plot(lags, pval_lb[, j], type = "o", pch = 19, col = colors[j], ylim = c(0, 1),
+  plot(lags, pval_lb[, j], type = "o", pch = 16,
+       col = colors[j], ylim = c(0, 1),
        xlab = "Ritardo (Lag)", ylab = "p-value",
-       main = paste("Test Ljung-Box - P-values per ritardo:", colnames(pval_lb)[j]))
+       main = paste("Ljung-Box:", colnames(pval_lb)[j]))
   abline(h = 0.05, lty = 2, col = "red", lwd = 1.5)
   grid(col = "lightgray", lty = "dotted")
 }
-mtext("Diagnostica di Ljung-Box sui residui univariati", outer = TRUE, side = 3, cex = 1.1, font = 2)
-par(mfrow = c(1, 1))
 
-
-# 2. GRAFICO DIAGNOSTICO MULTIVARIATO (PORTMANTEAU E BREUSCH-GODFREY)
-
-# I test multivariati richiedono un numero di ritardi h > p (dove p = 2)
-lags_multi <- (var_fit$p + 1):16
-
-pval_pt <- numeric(length(lags_multi))
-pval_bg <- numeric(length(lags_multi))
-
-for (i in seq_along(lags_multi)) {
-  h <- lags_multi[i]
-  # Test Portmanteau Asintotico
-  pt_res <- serial.test(var_fit, lags.pt = h, type = "PT.asymptotic")
-  pval_pt[i] <- pt_res$serial$p.value
-  
-  # Test Breusch-Godfrey (LM)
-  bg_res <- serial.test(var_fit, lags.bg = h, type = "BG")
-  pval_bg[i] <- bg_res$serial$p.value
-}
-
-# Grafico dei p-value multivariati a confronto
-plot(lags_multi, pval_pt, type = "o", pch = 16, col = "#2878B5", ylim = c(0, 1),
-     xlab = "Numero di ritardi (Lag)", ylab = "p-value",
-     main = "Diagnostica Multivariata: P-values dei test di autocorrelazione dei residui")
-lines(lags_multi, pval_bg, type = "o", pch = 17, col = "#D73027", lty = 2)
-abline(h = 0.05, lty = 2, col = "black", lwd = 1.5)
-legend("topright", legend = c("Portmanteau Asintotico", "Breusch-Godfrey (LM)", "Soglia alpha = 0.05"),
-       col = c("#2878B5", "#D73027", "black"), lty = c(1, 2, 2), pch = c(16, 17, NA), bty = "n")
+plot(lags_multi, pval_pt, type = "o", pch = 16,
+     col = "#2878B5", ylim = c(0, 1),
+     xlab = "Ritardo (Lag)", ylab = "p-value",
+     main = "Portmanteau multivariato")
+abline(h = 0.05, lty = 2, col = "red", lwd = 1.5)
 grid(col = "lightgray", lty = "dotted")
+
+mtext("Diagnostica di autocorrelazione dei residui",
+      outer = TRUE, side = 3, cex = 1.1, font = 2)
+
+par(mfrow = c(1, 1))
 
 ```
 Dal grafico riguardante la Produzione Industriale si può supporre che dal quarto lag in poi (oltre un anno di misurazioni) si possa rilevare una componente autoregressiva significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.
@@ -194,7 +189,11 @@ La stabilità del VAR(2) viene valutata calcolando se gli autovalori $\lambda$ d
 
 ```{r echo=FALSE}
 moduli <- roots(var_fit)
-cat(round(moduli,3))
+knitr::kable(
+  as.data.frame(t(round(moduli, 3))),
+  col.names = NULL,
+  caption = "Moduli degli autovalori del VAR"
+)
 ```
 Tutti gli autovalori presentano un modulo strettamente inferiore a 1, a conferma che il sistema VAR(2) stimato sulle prime differenze logaritmiche è **stazionario e stabile**.
 

@@ -1,10 +1,7 @@
 ASPETTI GRAFICI
-- grafici test di ljung-box: troncare a 12 o 15 o 16 lag (a discrezione di chi modifica)
-- sistemare output autovalori della matrice compagna per stabilità del VAR(2)
 
 ASPETTI DEI TEST
-- levare test di breusch-godfrey
-- aggiungere formule delle ipotesi nulle dei vari test?
+- aggiungere formule delle ipotesi nulle dei vari test: jarque-bera, ARCH, granger congiunte, granger direzionale
 - controllare se è sensato la roba là dei test asimmetria curtosi ecc
 
 AGGIUNTE
