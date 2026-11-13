@@ -6,6 +6,7 @@ ASPETTI DEI TEST
 
 AGGIUNTE
 - considerare di fare il grafico dei residui al quadrato
+- togliere la parte finale fatta da chatgpt
 
 INTERPRETAZIONI
 - spiegare meglio il test arch, che testa l'autocorrelazione dei residui al quadrato, ma la usiamo per testare eteroschedasticità
