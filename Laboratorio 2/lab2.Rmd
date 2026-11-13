@@ -40,44 +40,59 @@ var_fit <- VAR(train_diff, p = 2, type = "const")
 
 Per verificare l'adeguatezza dinamica del modello VAR(2) stimato nel laboratorio precedente, se ne analizzano i residui tramite i grafici delle correlazioni (ACF) e cross-correlazioni (CCF).
 
-```{r echo=FALSE, out.width="85%", fig.align="center"}
-res <- ts(residuals(var_fit), 
-          end = end(train_diff), 
+```{r fig.align="center", fig.height=4, echo=F}
+res <- ts(residuals(var_fit),
+          end = end(train_diff),
           frequency = frequency(train_diff))
 
-par(mfrow = c(3, 2), mar = c(3.8, 3.8, 2.2, 1), oma = c(0, 0, 2, 0),
-    mgp = c(2, 0.8, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
-
 names_var <- c("Esportazioni", "Vendite", "Prod. industriale")
+colors <- c("#D73027", "#2878B5", "#238B45")
 
+# Layout: 3 righe x 3 colonne
+layout(matrix(c(
+  1, 2, 7,
+  3, 4, 8,
+  5, 6, 9
+), nrow = 3, byrow = TRUE))
+
+par(mar = c(3.5, 3.5, 2.2, 1),
+    oma = c(0, 0, 2.5, 0),
+    mgp = c(2, 0.7, 0),
+    cex.main = 0.85,
+    cex.lab = 0.75,
+    cex.axis = 0.7)
+
+# Prima colonna: residui
 for (i in 1:3) {
-  plot(res[, i], type = "l", col = c("#D73027", "#2878B5", "#238B45")[i],
-       ylab = "Residui", xlab = "Anno", main = paste("Residui -", names_var[i]))
+  plot(res[, i], type = "l", col = colors[i],
+       ylab = "Residui", xlab = "Anno",
+       main = paste("Residui -", names_var[i]))
   abline(h = 0, lty = 2, col = "gray40")
-  
-  acf(res[, i], lag.max = 20, main = "", ann = FALSE)
-  title(main = paste("ACF Residui -", names_var[i]), line = 0.8, cex.main = 0.85)
-  title(xlab = "Lag", ylab = "ACF", line = 2, cex.lab = 0.75)
+
+  # Seconda colonna: ACF
+  acf(res[, i], lag.max = 20, main = "",
+      ann = FALSE)
+  title(main = paste("ACF -", names_var[i]), line = 0.8)
 }
-mtext("Diagnostica univariata dei residui", outer = TRUE, side = 3, cex = 1, font = 2)
-par(mfrow = c(1, 1))
-```
 
-```{r echo=FALSE, out.width="65%", fig.align="center"}
-par(mfrow = c(3, 1), mar = c(3.8, 3.8, 2.2, 1), oma = c(0, 0, 2, 0),
-    mgp = c(2, 0.8, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
+# Terza colonna: CCF
+ccf(res[, 1], res[, 2], lag.max = 16,
+    main = "", ylab = "CCF", xlab = "Lag")
+title("CCF - Esportazioni - Vendite", line = 0.8)
 
-ccf(res[, 1], res[, 2], lag.max = 16, main = "", ylab = "CCF", xlab = "Lag")
-title(main = "CCF Residui: Esportazioni - Vendite", line = 0.8, cex.main = 0.85)
+ccf(res[, 1], res[, 3], lag.max = 16,
+    main = "", ylab = "CCF", xlab = "Lag")
+title("CCF - Esportazioni - Produzione", line = 0.8)
 
-ccf(res[, 1], res[, 3], lag.max = 16, main = "", ylab = "CCF", xlab = "Lag")
-title(main = "CCF Residui: Esportazioni - Prod. Industriale", line = 0.8, cex.main = 0.85)
+ccf(res[, 2], res[, 3], lag.max = 16,
+    main = "", ylab = "CCF", xlab = "Lag")
+title("CCF - Vendite - Produzione", line = 0.8)
 
-ccf(res[, 2], res[, 3], lag.max = 16, main = "", ylab = "CCF", xlab = "Lag")
-title(main = "CCF Residui: Vendite - Prod. Industriale", line = 0.8, cex.main = 0.85)
+mtext("Diagnostica dei residui",
+      outer = TRUE, side = 3, cex = 1, font = 2)
 
-mtext("Cross-correlazioni tra i residui", outer = TRUE, side = 3, cex = 1, font = 2)
-par(mfrow = c(1, 1))
+layout(1)
+
 ```
 
 Dall'analisi grafica delle funzioni di autocorrelazione (ACF) dei residui di ciascuna equazione non emergono in generale picchi particolarmente significativi. Si nota però un'ACF negativa leggermente significativa al quarto ritardo per la Produzione Industriale: potrebbe essere provocata da una stagionalità annuale non rilevata in fase di preprocessing, o da rumori spuri. Dai cross-correlogrammi non sono evidenziate alcune cross-correlazioni significative. La correlazione pura tra i residui di Esportazioni e Produzione Industriale è ammessa e non segnala possibili problematiche.\
@@ -118,9 +133,8 @@ kable(tab_autocorr, caption = "Test di autocorrelazione sui residui",
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-Si osserva che a livello univariato l’assunzione di incorrelazione è rifiutata dai test di Ljung-Box per la sola Produzione Industriale, sebbene il p-value risulti poco significativo ($\alpha$ = 0.04431), mentre a livello multivariato il test di Portmanteau non rifiuta l’incorrelazione. Per analizzare più approfonditamente tali risultati si osservano i seguenti grafici di diagnostica.
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height=4}
 
 res <- residuals(var_fit)
 
@@ -178,9 +192,11 @@ par(mfrow = c(1, 1))
 
 ```
 
-Dal grafico riguardante la Produzione Industriale si può supporre che dal quarto lag in poi (oltre un anno di misurazioni) si possa rilevare una componente autoregressiva significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.
+<!-- Si osserva che a livello univariato l’assunzione di incorrelazione è rifiutata dai test di Ljung-Box per la sola Produzione Industriale, sebbene il p-value risulti poco significativo ($\alpha$ = 0.04431), mentre a livello multivariato il test di Portmanteau non rifiuta l’incorrelazione. -->
 
-Dal grafico riguardante la Diagnostica Multivariata si nota che il test di Portmanteau non viene rifiutato a partire la lag 5..................................................
+Mentre per Vendite ed Esportazioni i test di Ljung-Box non evidenziano autocorrelazioni complessivamente significative, dal grafico relativo alla Produzione Industriale risulta che dal quarto lag in poi, quindi ad almeno un anno di distanza, esista un'autocorrelazione significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.  
+Passando all'analisi multivariata, i risultati del test di Portmanteau mostrano che, per ritardi brevi  ($k=3,4$) l'ipotesi nulla di incorrelazione viene rifiutata, forse sempre a causa del picco di autocorrelazione presente al $4^\circ$ ritardo nella Produzione Industriale; tuttavia, per i ritardi $k \ge 5$ non si rileva evidenza statistica sufficiente per rifiutare ($p\text{-value} = 0.141$ a lag 8). Nel complesso, anche questi risultati suggeriscono che l'ordine del VAR selezionato possa essere considerato adeguato, pur in presenza di una limitata dipendenza residua ai primi ritardi.
+
 
 ## 2. Diagnostica di Stabilità, Normalità ed Effetti ARCH
 
