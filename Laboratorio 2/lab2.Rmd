@@ -8,8 +8,8 @@ header-includes:
   - \setlength{\droptitle}{-2cm}
   - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
   - \posttitle{\end{center}\vspace{-0.5cm}}
-  - \preauthor{\begin{center}\large\vspace{-0.3cm}}
-  - \postauthor{\end{center}\vspace{-1.5cm}}
+  - \preauthor{\begin{center}\large\vspace{-0.1cm}}
+  - \postauthor{\end{center}\vspace{-2cm}}
 ---
 
 ```{r setup, include=FALSE}
@@ -114,7 +114,7 @@ colnames(tab_autocorr) <- c("Lag", "Statistica", "GdL",
   "p-value", "Decisione ($\\alpha=0.05$)")
 
 kable(tab_autocorr, caption = "Test di autocorrelazione sui residui",
-  booktabs = TRUE,escape = FALSE) %>%
+  booktabs = TRUE,escape = FALSE, format = "latex") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
@@ -190,9 +190,7 @@ La stabilità del VAR(2) viene valutata calcolando se gli autovalori $\lambda$ d
 
 ```{r echo=FALSE}
 moduli <- roots(var_fit)
-knitr::kable(
-  as.data.frame(t(round(moduli, 3))),
-  col.names = NULL,
+kable(  as.data.frame(t(round(moduli, 3))),  col.names = NULL,
   caption = "Moduli degli autovalori del VAR"
 )
 ```
@@ -218,7 +216,7 @@ tab_diag_extra <- data.frame(
 
 colnames(tab_diag_extra) <- c("Test Diagnostico", "$H_0$", "Statistica", "GdL", "p-value")
 
-kable(tab_diag_extra, caption = "Controlli di Normalità e ARCH sui residui del VAR(2)", booktabs = TRUE) %>%
+kable(tab_diag_extra, caption = "Controlli di Normalità e ARCH sui residui del VAR(2)", booktabs = TRUE, format = "latex", escape = FALSE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
@@ -242,19 +240,22 @@ tab_granger_joint <- data.frame(
 
 colnames(tab_granger_joint) <- c("Variabile Causa", "Statistica F", "GdL 1", "GdL 2", "p-value", "Decisione ($\\alpha=0.05$)")
 
-kable(tab_granger_joint, caption = "Test congiunti di Granger nel VAR(2) trivariato", booktabs = TRUE) %>%
+kable(tab_granger_joint, caption = "Test congiunti di Granger nel VAR(2) trivariato", booktabs = TRUE, format = "latex",escape = FALSE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticamente significativo ($p$-value $< 0.05$) nei confronti del resto del sistema, indicando che ogni variabile abbia contributo predittivo verso **almeno una** delle altre due variabili (e non necessariamente verso entrambe).
+Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticamente significativo ($p$-value $< 0.05$) nei confronti del resto del sistema, indicando che ogni variabile abbia contributo predittivo verso *almeno una* delle altre due variabili (e non necessariamente verso entrambe).
 
 ## 4. Test di Causalità di Granger: Sistema e Singole Direzioni
 
-Per approfondire la struttura delle relazioni causali, si eseguono test direzionali per ciascuna coppia isolata (bivariato) e nel sistema trivariato completo.
+Per approfondire la struttura delle relazioni causali, si eseguono test direzionali per ciascuna coppia isolata (caso bivariato) e nel sistema trivariato completo. 
 
-Nei test bivariati si valuta se una data variabile $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando un test ANOVA su un modello definito come $x_{2,\,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i}$, con $H_0: \phi_{11} = ... = \phi_{1k} = 0$, cioè si testa se la sola aggiunta dei ritardi di $x_1$ aggiunga informazioni significative rispetto alla sola componente autoregressiva di $x_2$.
+Nei test bivariati si valuta se una data variabile $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando un test ANOVA su un modello definito come 
+$$x_{2,\,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i}$$ con $H_0: \phi_{11} = ... = \phi_{1k} = 0$, cioè si testa se l'aggiunta dei ritardi di $x_1$ al modello aggiunga informazioni significative rispetto alla sola componente autoregressiva di $x_2$.
 
-Nei test trivariati si valuta se $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando questa volta un test ANOVA sul modello VAR completo per la variabile $x_{2}$ in cui è inclusa anche la terza variabile $x_3$, cioè $x_{2,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i} + \sum_{i=1}^k\phi_{3i} \, x_{3,t-i}$, ponendo sempre $H_0: \phi_{11} = \phi_{12} = 0$. In questi test, rispetto a quelli bivariati, si vuole osservare la quantità di informazione guadagnata dall'aggiunta dei ritardi di $x_1$ al modello considerando anche la presenza fissa di $x_3$, la quale potrebbe contenere informazioni necessarie perché $x_1$ Granger-causi $x_2$.
+Nei test trivariati si valuta se $x_{1}$ abbia Granger-causalità su $x_{2}$ formulando questa volta un test ANOVA sul modello VAR completo per la variabile $x_{2}$ in cui è inclusa anche la terza variabile $x_3$, cioè 
+$$x_{2,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i} + \sum_{i=1}^k\phi_{3i} \, x_{3,t-i}+\phi_0$$ ponendo sempre $H_0: \phi_{11} = \phi_{12} = 0$. In questi test, rispetto a quelli bivariati, si vuole osservare la quantità di informazione guadagnata dall'aggiunta dei ritardi di $x_1$ al modello considerando anche la presenza fissa di $x_3$, la quale potrebbe contenere informazioni necessarie perché $x_1$ possa Granger-causare $x_2$. 
+
 
 ```{r echo=FALSE}
 eq_esp  <- var_fit$varresult[["esportazioni"]]
@@ -310,14 +311,16 @@ tab_compare <- data.frame(
 
 colnames(tab_compare) <- c("Direzione del Test", "F (Triv.)", "p-val (Triv.)", "Dec. (Triv.)", "F (Biv.)", "p-val (Biv.)", "Dec. (Biv.)")
 
-kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", booktabs = TRUE,
-      linesep = "") %>%
+kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", booktabs = TRUE, linesep = "", format = "latex",escape = FALSE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
+
 ```
 
-Si osservano per primi i risultati ottenuti dai test bivariati. L'effetto delle Esportazioni sulla Produzione Industriale è l'unica Granger.causalità con evidenza forte (p-valuea = 0.0093); si rileva anche Granger-causalità dalle Vendite alla Produzione Industriale e dalla Produzione Industriale alle Esportazioni, ma l'evidenza per entrambi risulta debole (rispettivamente p-value = 0.0406 e p-value 0.0459). Altre possibili causalità non hanno alcuna significatività statistica.
+Si osservano per primi i risultati ottenuti dai test bivariati. L'effetto delle Esportazioni sulla Produzione Industriale è l'unica Granger-causalità con evidenza forte (p-value = 0.0093); si rileva anche Granger-causalità dalle Vendite alla Produzione Industriale e dalla Produzione Industriale alle Esportazioni, ma l'evidenza per entrambi risulta debole (rispettivamente p-value = 0.0406 e p-value 0.0459). Altre possibili causalità non hanno alcuna significatività statistica.
 
-Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività **debole**). Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
+Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività *debole*). Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
+
+
 
 ## 5. Interpretazione Economica e Limiti
 
