@@ -250,10 +250,28 @@ Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticam
 
 ## 4. Test di Causalità di Granger: Sistema e Singole Direzioni
 
-Per approfondire la struttura delle relazioni causali, si confrontano i test direzionali eseguiti **all'interno del sistema trivariato** (F-test sui ritardi della singola variabile causa nell'equazione della variabile target) con i **test bivariati isolati** condotti tramite `grangertest()` con 2 ritardi.
+Per approfondire la struttura delle relazioni causali, si eseguono test direzionali per ciascuna coppia isolata (bivariato) e nel sistema trivariato completo. 
+
+Nei test bivariati si valuta se una data variabile $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando un test ANOVA su un modello definito come 
+$x_{2,\,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i}$, con $H_0: \phi_{11} = ... = \phi_{1k} = 0$, cioè si testa se la sola aggiunta dei ritardi di $x_1$ aggiunga informazioni significative rispetto alla sola componente autoregressiva di $x_2$.
+
+Nei test trivariati si valuta se $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando questa volta un test ANOVA sul modello VAR completo per la variabile $x_{2}$ in cui è inclusa anche la terza variabile $x_3$, cioè 
+$x_{2,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i} + \sum_{i=1}^k\phi_{3i} \, x_{3,t-i}$, ponendo sempre $H_0: \phi_{11} = \phi_{12} = 0$. In questi test, rispetto a quelli bivariati, si vuole osservare la quantità di informazione guadagnata dall'aggiunta dei ritardi di $x_1$ al modello considerando anche la presenza fissa di $x_3$, la quale potrebbe contenere informazioni necessarie perché $x_1$ Granger-causi $x_2$. 
 
 ```{r echo=FALSE}
-# Estrazione equazioni OLS dal VAR
+eq_esp  <- var_fit$varresult[["esportazioni"]]
+eq_ven  <- var_fit$varresult[["vendite"]]
+eq_prod <- var_fit$varresult[["prod_industriale"]]
+
+# Test Trivariati
+lh_esp_ven  <- linearHypothesis(eq_ven,  c("esportazioni.l1 = 0", "esportazioni.l2 = 0"))
+lh_prod_ven <- linearHypothesis(eq_ven,  c("prod_industriale.l1 = 0", "prod_industriale.l2 = 0"))
+
+lh_ven_esp  <- linearHypothesis(eq_esp,  c("vendite.l1 = 0", "vendite.l2 = 0"))
+lh_prod_esp <- linearHypothesis(eq_esp,  c("prod_industriale.l1 = 0", "prod_industriale.l2 = 0"))
+
+lh_esp_prod <- linearHypothesis(eq_prod, c("esportazioni.l1 = 0", "esportazioni.l2 = 0"))
+lh_ven_prod <- linearHypothesis(eq_prod, c("vendite.l1 = 0", "vendite.l2 = 0"))
 
 # Test Bivariati
 gb_esp_ven  <- grangertest(vendite ~ esportazioni, order = 2, data = train_diff)
@@ -266,31 +284,42 @@ gb_ven_prod <- grangertest(prod_industriale ~ vendite, order = 2, data = train_d
 gb_prod_ven <- grangertest(vendite ~ prod_industriale, order = 2, data = train_diff)
 
 # Costruzione Tabella Comparativa
+f_tri    <- c(lh_esp_ven$F[2], lh_esp_prod$F[2], lh_ven_esp$F[2],  
+              lh_ven_prod$F[2], lh_prod_esp$F[2],  lh_prod_ven$F[2])
+p_tri    <- c(lh_esp_ven$`Pr(>F)`[2], lh_esp_prod$`Pr(>F)`[2], lh_ven_esp$`Pr(>F)`[2], 
+              lh_ven_prod$`Pr(>F)`[2], lh_prod_esp$`Pr(>F)`[2], lh_prod_ven$`Pr(>F)`[2])
+
+f_biv    <- c(gb_esp_ven$F[2], gb_esp_prod$F[2], gb_ven_esp$F[2], 
+              gb_ven_prod$F[2], gb_prod_esp$F[2],  gb_prod_ven$F[2])
+p_biv    <- c(gb_esp_ven$`Pr(>F)`[2], gb_esp_prod$`Pr(>F)`[2], gb_ven_esp$`Pr(>F)`[2],  
+              gb_ven_prod$`Pr(>F)`[2], gb_prod_esp$`Pr(>F)`[2],  gb_prod_ven$`Pr(>F)`[2])
+
 tab_compare <- data.frame(
-  Direzione = c("Esportazioni -> Vendite", "Esportazioni -> Prod. Ind.",
-                "Vendite -> Esportazioni", "Vendite -> Prod. Ind.",
-                "Prod. Ind. -> Esportazioni", "Prod. Ind. -> Vendite"),
-  F_Biv = c(round(gb_esp_ven$F[2], 3), round(gb_esp_prod$F[2], 3),
-            round(gb_ven_esp$F[2], 3), round(gb_ven_prod$F[2], 3),
-            round(gb_prod_esp$F[2], 3), round(gb_prod_ven$F[2], 3)),
-  pval_Biv = c(round(gb_esp_ven$`Pr(>F)`[2], 4), round(gb_esp_prod$`Pr(>F)`[2], 4),
-               round(gb_ven_esp$`Pr(>F)`[2], 4), round(gb_ven_prod$`Pr(>F)`[2], 4),
-               round(gb_prod_esp$`Pr(>F)`[2], 4), round(gb_prod_ven$`Pr(>F)`[2], 4)),
-  Dec_Biv = c("Non rigetto", "Rigetto H0", "Non rigetto", "Rigetto H0", "Rigetto H0", "Non rigetto")
+  Direzione = c("Esportazioni -> Vendite", 
+                "Esportazioni -> Prod. Ind.", 
+                "Vendite -> Esportazioni",
+                "Vendite -> Prod. Ind.", 
+                "Prod. Ind. -> Esportazioni",
+                "Prod. Ind. -> Vendite"),
+  F_Tri     = round(f_tri, 3),
+  pval_Tri  = round(p_tri, 4),
+  Dec_Tri   = ifelse(p_tri < 0.05, "Rigetto H0", "Non rigetto"),
+  F_Biv     = round(f_biv, 3),
+  pval_Biv  = round(p_biv, 4),
+  Dec_Biv   = ifelse(p_biv < 0.05, "Rigetto H0", "Non rigetto"),
+  stringsAsFactors = FALSE
 )
 
-colnames(tab_compare) <- c("Direzione del Test Bivariato", "F", "p-value", "Decisione")
+colnames(tab_compare) <- c("Direzione del Test", "F (Triv.)", "p-val (Triv.)", "Dec. (Triv.)", "F (Biv.)", "p-val (Biv.)", "Dec. (Biv.)")
 
-kable(tab_compare, caption = "Confronto dei test direzionali di Granger bivariati", booktabs = TRUE) %>%
+kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", booktabs = TRUE,
+      linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
-Dai test bivariati risulta che 
+Si osservano per primi i risultati ottenuti dai test bivariati. L'effetto delle Esportazioni sulla Produzione Industriale è l'unica Granger.causalità con evidenza forte (p-valuea = 0.0093); si rileva anche Granger-causalità dalle Vendite alla Produzione Industriale e dalla Produzione Industriale alle Esportazioni, ma l'evidenza per entrambi risulta debole (rispettivamente p-value = 0.0406 e p-value 0.0459). Altre possibili causalità non hanno alcuna significatività statistica.
 
-
-### Ruolo dell'Informazione Contenuta nella Terza Variabile
-Dalla comparazione emerge un risultato di particolare rilievo econometrico:
-* **Relazione Vendite $\to$ Produzione Industriale:** Nel test bivariato, le Vendite non causano la Produzione Industriale ($p = 0.1472$). Tuttavia, nel VAR trivariato, controllando per i ritardi delle Esportazioni, il test diventa **altamente significativo** ($p = 0.0152$, rigetto di $H_0$). Ciò dimostra che l'omissione delle Esportazioni nei modelli bivariati maschera il potere predittivo che le Vendite esercitano sulla Produzione Industriale.
-* **Bidirezionalità Esportazioni $\leftrightarrow$ Produzione Industriale:** Riconfermata sia nei modelli bivariati sia in quello trivariato, evidenziando un forte circuito di trasmissione reale a breve termine.
+Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività **debole**).
+Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
 
 
 ## 5. Interpretazione Economica e Limiti
