@@ -180,7 +180,7 @@ par(mfrow = c(1, 1))
 
 Dal grafico riguardante la Produzione Industriale si può supporre che dal quarto lag in poi (oltre un anno di misurazioni) si possa rilevare una componente autoregressiva significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.
 
-Dal grafico riguardante la Diagnostica Multivariata il fatto che entrambi i test siano significativi fino al quarto ritardo, e che il test BG sia significativo a qualsiasi ritardo, indicano che effettivamente non tutti i fenomeni di cross-correlazione sono colti adeguatamente da un modello VAR(2)
+Dal grafico riguardante la Diagnostica Multivariata si nota che il test di Portmanteau non viene rifiutato a partire la lag 5..................................................
 
 ## 2. Diagnostica di Stabilità, Normalità ed Effetti ARCH
 
