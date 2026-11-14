@@ -134,7 +134,6 @@ kable(tab_autocorr, caption = "Test di autocorrelazione sui residui",
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-
 ```{r echo=FALSE, fig.height=3}
 
 res <- residuals(var_fit)
@@ -195,9 +194,8 @@ par(mfrow = c(1, 1))
 
 <!-- Si osserva che a livello univariato l’assunzione di incorrelazione è rifiutata dai test di Ljung-Box per la sola Produzione Industriale, sebbene il p-value risulti poco significativo ($\alpha$ = 0.04431), mentre a livello multivariato il test di Portmanteau non rifiuta l’incorrelazione. -->
 
-Mentre per Vendite ed Esportazioni i test di Ljung-Box non evidenziano autocorrelazioni complessivamente significative, dal grafico relativo alla Produzione Industriale risulta che dal quarto lag in poi, quindi ad almeno un anno di distanza, esista un'autocorrelazione significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.  
-Passando all'analisi multivariata, i risultati del test di Portmanteau mostrano che, per ritardi brevi  ($k=3,4$) l'ipotesi nulla di incorrelazione viene rifiutata, forse sempre a causa del picco di autocorrelazione presente al $4^\circ$ ritardo nella Produzione Industriale; tuttavia, per i ritardi $k \ge 5$ non si rileva evidenza statistica sufficiente per rifiutare ($p\text{-value} = 0.141$ a lag 8). Nel complesso, anche questi risultati suggeriscono che l'ordine del VAR selezionato possa essere considerato adeguato, pur in presenza di una limitata dipendenza residua ai primi ritardi.
-
+Mentre per Vendite ed Esportazioni i test di Ljung-Box non evidenziano autocorrelazioni complessivamente significative, dal grafico relativo alla Produzione Industriale risulta che dal quarto lag in poi, quindi ad almeno un anno di distanza, esista un'autocorrelazione significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.\
+Passando all'analisi multivariata, i risultati del test di Portmanteau mostrano che, per ritardi brevi ($k=3,4$) l'ipotesi nulla di incorrelazione viene rifiutata, forse sempre a causa del picco di autocorrelazione presente al $4^\circ$ ritardo nella Produzione Industriale; tuttavia, per i ritardi $k \ge 5$ non si rileva evidenza statistica sufficiente per rifiutare ($p\text{-value} = 0.141$ a lag 8). Nel complesso, anche questi risultati suggeriscono che l'ordine del VAR selezionato possa essere considerato adeguato, pur in presenza di una limitata dipendenza residua ai primi ritardi.
 
 ## 2. Diagnostica di Stabilità, Normalità ed Effetti ARCH
 
@@ -261,18 +259,15 @@ kable(tab_granger_joint, caption = "Test congiunti di Granger nel VAR(2) trivari
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticamente significativo ($p$-value $< 0.05$) nei confronti del resto del sistema, indicando che ogni variabile abbia contributo predittivo verso *almeno una* delle altre due variabili (e non necessariamente verso entrambe).
+Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticamente significativo ($p$-value $< 0.05$) nei confronti del resto del sistema, indicando che ogni variabile abbia contributo predittivo verso almeno una delle altre due variabili (e non necessariamente verso entrambe).
 
 ## 4. Test di Causalità di Granger: Sistema e Singole Direzioni
 
-Per approfondire la struttura delle relazioni causali, si eseguono test direzionali per ciascuna coppia isolata (caso bivariato) e nel sistema trivariato completo. 
+Per approfondire la struttura delle relazioni causali, si eseguono sia test direzionali per ciascuna coppia isolata (caso bivariato), che test per il sistema trivariato completo.
 
-Nei test bivariati si valuta se una data variabile $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando un test ANOVA su un modello definito come 
-$$x_{2,\,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i}$$ con $H_0: \phi_{11} = ... = \phi_{1k} = 0$, cioè si testa se l'aggiunta dei ritardi di $x_1$ al modello aggiunga informazioni significative rispetto alla sola componente autoregressiva di $x_2$.
+Nei test bivariati si valuta se una data variabile $x_{1}$ abbia Granger-causalità su un'altra variabile $x_{2}$ formulando un test ANOVA su un modello definito come $$x_{2,\,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i}$$ con $H_0: \phi_{11} = ... = \phi_{1k} = 0$, cioè si testa se l'aggiunta dei ritardi di $x_1$ al modello aggiunga informazioni significative rispetto alla sola componente autoregressiva di $x_2$.
 
-Nei test trivariati si valuta se $x_{1}$ abbia Granger-causalità su $x_{2}$ formulando questa volta un test ANOVA sul modello VAR completo per la variabile $x_{2}$ in cui è inclusa anche la terza variabile $x_3$, cioè 
-$$x_{2,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i} + \sum_{i=1}^k\phi_{3i} \, x_{3,t-i}+\phi_0$$ ponendo sempre $H_0: \phi_{11} = \phi_{12} = 0$. In questi test, rispetto a quelli bivariati, si vuole osservare la quantità di informazione guadagnata dall'aggiunta dei ritardi di $x_1$ al modello considerando anche la presenza fissa di $x_3$, la quale potrebbe contenere informazioni necessarie perché $x_1$ possa Granger-causare $x_2$. 
-
+Nei test trivariati si valuta se $x_{1}$ abbia Granger-causalità su $x_{2}$ formulando questa volta un test ANOVA sul modello VAR completo per la variabile $x_{2}$ in cui è inclusa anche la terza variabile $x_3$, cioè $$x_{2,t} = \sum_{i=1}^k\phi_{1i} \, x_{1,t-i} + \sum_{i=1}^k\phi_{2i} \, x_{2,t-i} + \sum_{i=1}^k\phi_{3i} \, x_{3,t-i}+\phi_0$$ ponendo sempre $H_0: \phi_{11} = \phi_{12} = 0$. In questi test, rispetto a quelli bivariati, si vuole osservare la quantità di informazione guadagnata dall'aggiunta dei ritardi di $x_1$ al modello considerando anche la presenza fissa di $x_3$, la quale potrebbe contenere informazioni necessarie perché $x_1$ possa Granger-causare $x_2$.
 
 ```{r echo=FALSE}
 eq_esp  <- var_fit$varresult[["esportazioni"]]
@@ -328,16 +323,16 @@ tab_compare <- data.frame(
 
 colnames(tab_compare) <- c("Direzione del Test", "F (Triv.)", "p-val (Triv.)", "Dec. (Triv.)", "F (Biv.)", "p-val (Biv.)", "Dec. (Biv.)")
 
-kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", booktabs = TRUE, linesep = "", format = "latex",escape = FALSE) %>%
+kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", booktabs = TRUE, linesep = "", format = "latex",escape = FALSE, align = "lrrl|rrl") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 
 ```
 
 Si osservano per primi i risultati ottenuti dai test bivariati (Tabella 5). L'effetto delle Esportazioni sulla Produzione Industriale è l'unica Granger-causalità con evidenza forte (p-value = 0.0093); si rileva anche Granger-causalità dalle Vendite alla Produzione Industriale e dalla Produzione Industriale alle Esportazioni, ma l'evidenza per entrambi risulta debole (rispettivamente p-value = 0.0406 e p-value 0.0459). Altre possibili causalità non hanno alcuna significatività statistica.
 
-Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività *debole*). Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
+Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività debole).
 
-
+Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
 
 ## 5. Interpretazione Economica e Limiti
 
