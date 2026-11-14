@@ -39,6 +39,8 @@ test_diff  <- window(data_diff, start = c(2017, 1))
 var_fit <- VAR(train_diff, p = 2, type = "const")
 ```
 
+## Dipendenza temporale dei residui
+
 Per verificare l'adeguatezza dinamica del modello VAR(2) stimato nel laboratorio precedente, se ne analizzano i residui tramite i grafici delle correlazioni (ACF) e cross-correlazioni (CCF).
 
 ```{r fig.align="center", fig.height=4, echo=F}
@@ -57,7 +59,7 @@ layout(matrix(c(
 ), nrow = 3, byrow = TRUE))
 
 par(mar = c(3.5, 3.5, 2.2, 1),
-    oma = c(0, 0, 2.5, 0),
+    oma = c(0, 0, 0, 0),
     mgp = c(2, 0.7, 0),
     cex.main = 0.85,
     cex.lab = 0.75,
@@ -89,15 +91,15 @@ ccf(res[, 2], res[, 3], lag.max = 16,
     main = "", ylab = "CCF", xlab = "Lag")
 title("CCF - Vendite - Produzione", line = 0.8)
 
-mtext("Diagnostica dei residui",
-      outer = TRUE, side = 3, cex = 1, font = 2)
+# mtext("Diagnostica dei residui",
+#       outer = TRUE, side = 3, cex = 1, font = 2)
 
 layout(1)
 
 ```
 
 Dall'analisi grafica delle funzioni di autocorrelazione (ACF) dei residui di ciascuna equazione non emergono in generale picchi particolarmente significativi. Si nota però un'ACF negativa leggermente significativa al quarto ritardo per la Produzione Industriale: potrebbe essere provocata da una stagionalità annuale non rilevata in fase di preprocessing, o da rumori spuri. Dai cross-correlogrammi non sono evidenziate alcune cross-correlazioni significative. La correlazione pura tra i residui di Esportazioni e Produzione Industriale è ammessa e non segnala possibili problematiche.\
-Si testa ora l'assenza di autocorrelazione tra i residui del modello. Per ciascuna equazione del modello si applica il test di Ljung-Box, la cui ipotesi nulla $H_0: \rho_1 = \dots = \rho_k = 0$ stabilisce l'assenza di autocorrelazione fino al ritardo $k$. A livello di sistema, si conduce il test Portmanteau asintotico per verificare l'ipotesi nulla multivariata $H_0: \mathbf{C}_1 = \dots = \mathbf{C}_k = \mathbf{0}$, ovvero la nullità delle matrici di autocorrelazione per l'intero sistema fino al ritardo $k$. I risultati sono riassunti nella tabella seguente. <!-- Vengono condotti dei test formali sull'assenza di autocorrelazione tra i residui: si utilizza il test di Ljung-Box che testa separatamente per ciascuna equazione del modello l'ipotesi nulla $H_0: \rho_1 = \dots = \rho_k = 0$, ovvero la nullità dei coefficienti di autocorrelazione fino al ritardo $k$; si conduce inoltre il test di Portmanteau asintotico per testare $H_0: C_1 = \dots = C_k = \mathbf{0}$, ovvero la nullità delle matrici di autocorrelazione per l'intero sistema fino al ritardo $k$. I risultati sono riassunti nella tabella seguente. -->
+Si testa ora l'assenza di autocorrelazione tra i residui del modello. Per ciascuna equazione del modello si applica il test di Ljung-Box, la cui ipotesi nulla $H_0: \rho_1 = \dots = \rho_k = 0$ stabilisce l'assenza di autocorrelazione fino al ritardo $k$. A livello di sistema, si conduce il test Portmanteau asintotico per verificare l'ipotesi nulla multivariata $H_0: \mathbf{C}_1 = \dots = \mathbf{C}_k = \mathbf{0}$, ovvero la nullità delle matrici di autocorrelazione per l'intero sistema fino al ritardo $k$. I risultati sono riassunti nella tabella seguente.
 
 ```{r echo=FALSE}
 # Test di autocorrelazione multivariata
@@ -192,14 +194,10 @@ par(mfrow = c(1, 1))
 
 ```
 
-<!-- Si osserva che a livello univariato l’assunzione di incorrelazione è rifiutata dai test di Ljung-Box per la sola Produzione Industriale, sebbene il p-value risulti poco significativo ($\alpha$ = 0.04431), mentre a livello multivariato il test di Portmanteau non rifiuta l’incorrelazione. -->
-
 Mentre per Vendite ed Esportazioni i test di Ljung-Box non evidenziano autocorrelazioni complessivamente significative, dal grafico relativo alla Produzione Industriale risulta che dal quarto lag in poi, quindi ad almeno un anno di distanza, esista un'autocorrelazione significativa (fenomeno già osservato durante l'analisi delle ACF, forse derivante da stagionalità non completamente eliminate). Tale effetto potrebbe essere corretto attraverso l'impiegazione di un VAR di ordine più alto, ma aumentare l'ordine a 4 potrebbe essere eccessivo in termini di complessità del modello e di rischio di sovradattamento.\
 Passando all'analisi multivariata, i risultati del test di Portmanteau mostrano che, per ritardi brevi ($k=3,4$) l'ipotesi nulla di incorrelazione viene rifiutata, forse sempre a causa del picco di autocorrelazione presente al $4^\circ$ ritardo nella Produzione Industriale; tuttavia, per i ritardi $k \ge 5$ non si rileva evidenza statistica sufficiente per rifiutare ($p\text{-value} = 0.141$ a lag 8). Nel complesso, anche questi risultati suggeriscono che l'ordine del VAR selezionato possa essere considerato adeguato, pur in presenza di una limitata dipendenza residua ai primi ritardi.
 
-## 2. Diagnostica di Stabilità, Normalità ed Effetti ARCH
-
-### Stabilità del Modello
+## Stabilità, normalità ed effetti ARCH
 
 La stabilità del VAR(2) viene valutata calcolando se gli autovalori $\lambda$ della matrice compagna del sistema risultino in valore assoluto minori di 1.
 
@@ -212,7 +210,7 @@ kable(  as.data.frame(t(round(moduli, 3))),  col.names = NULL,
 
 Tutti gli autovalori presentano un modulo strettamente inferiore a 1 (Tabella 2), a conferma che il sistema VAR(2) stimato sulle prime differenze logaritmiche è **stazionario e stabile**.
 
-Si valutano ora l'ipotesi di distribuzione normale (test di Jarque-Bera) e la presenza di eteroschedasticità condizionale (test ARCH) nei residui.
+Si esaminano ora l'ipotesi di normalità residua (test multivariato di Jarque-Bera, scomposto in asimmetria e curtosi) la presenza di eteroschedasticità condizionale (test ARCH).
 
 ```{r echo=FALSE}
 norm_test <- normality.test(var_fit)
@@ -235,9 +233,10 @@ kable(tab_diag_extra, caption = "Controlli di Normalità e ARCH sui residui del 
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-Tutti i test effettuati sono rifiutati (Tabella 3), tre dei quali con evidenza molto forte. Il rigetto della normalità (forse dovuto alle oscillazioni macroeconomiche storiche provocate dalla crisi economica mondiale del 2008) non invalida consistenza e non distorsione degli stimatori dei parametri del VAR. Le inferenze e gli intervalli di confidenza che si basano sull'approssimazione a una distribuzione normale potrebbero però non essere affidabili. La verosimile presenza di effetti ARCH invece segnala eteroschedasticità condizionata nei residui, il che potrebbe indicare che un modello VAR non sia sufficiente a modellare tutti gli aspetti chiave della realtà economica studiata.
+<!-- Tutti i test effettuati sono rifiutati (Tabella 3), tre dei quali con evidenza molto forte. Il rigetto della normalità (forse dovuto alle oscillazioni macroeconomiche storiche provocate dalla crisi economica mondiale del 2008) non invalida consistenza e non distorsione degli stimatori dei parametri del VAR. Le inferenze e gli intervalli di confidenza che si basano sull'approssimazione a una distribuzione normale potrebbero però non essere affidabili. La verosimile presenza di effetti ARCH invece segnala eteroschedasticità condizionata nei residui, il che potrebbe indicare che un modello VAR non sia sufficiente a modellare tutti gli aspetti chiave della realtà economica studiata. -->
+Come si vede in Tabella 3, tutti i test portano al rifiuto di $H_0$ con forte evidenza statistica. Dal punto di vista econometrico, la deviazione dalla gaussianità (forse dovuto alle oscillazioni macroeconomiche storiche provocate dalla crisi economica mondiale del 2008) non invalida consistenza e non distorsione degli stimatori OLS, pur richiedendo cautela nell'interpretazione dei test. Il rifiuto del test ARCH invece segnala eteroschedasticità condizionata nei residui, indicando che la specificazione VAR omoschedastica non soddisfa pienamente l'ipotesi di rumore bianco gaussiano a varianza costante. 
 
-Per ora ci si limita però a studiare gli aspetti del modello VAR(2) preso in considerazione. Si verifica ora se i ritardi di ciascuna variabile contribuiscono a prevedere le altre due variabili del sistema. Per ogni variabile $x_i$, l'ipotesi nulla $H_0$ stabilisce che tutti i coefficienti associati ai suoi ritardi siano pari a zero nelle equazioni delle rimanenti due variabili.
+Si verifica ora tramite i test congiunti di casualità di Granger se i ritardi di ciascuna variabile contribuiscono a prevedere le altre due variabili del sistema. Per ogni variabile $x_i$, l'ipotesi nulla $H_0$ stabilisce che tutti i coefficienti associati ai suoi ritardi siano pari a zero nelle equazioni delle rimanenti due variabili.
 
 ```{r echo=FALSE}
 g_esp  <- causality(var_fit, cause = "esportazioni")$Granger
@@ -261,7 +260,7 @@ kable(tab_granger_joint, caption = "Test congiunti di Granger nel VAR(2) trivari
 
 Tutte e tre le variabili mostrano un contributo predittivo congiunto statisticamente significativo ($p$-value $< 0.05$) nei confronti del resto del sistema, indicando che ogni variabile abbia contributo predittivo verso almeno una delle altre due variabili (e non necessariamente verso entrambe).
 
-## 4. Test di Causalità di Granger: Sistema e Singole Direzioni
+## Test di Causalità di Granger: Sistema e Singole Direzioni
 
 Per approfondire la struttura delle relazioni causali, si eseguono sia test direzionali per ciascuna coppia isolata (caso bivariato), che test per il sistema trivariato completo.
 
@@ -332,35 +331,12 @@ Si osservano per primi i risultati ottenuti dai test bivariati (Tabella 5). L'ef
 
 Dai risultati ottenuti dai test trivariati si possono trarre in primis conclusioni più scontate, come il riscontro che le Esportazioni e le Vendite Granger-causino la Produzione Industriale (rispettivamente p-value = 0.0084 e 0.0354), seguendo naturalmente quanto già osservato nei casi bivariati. È però curioso che la causalità da Produzione Industriale a Esportazioni perda la sua debole significatività quando le Vendite contribuiscono all'informazione (constatando che l'affermazione per il caso bivariato è di significatività debole).
 
-Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.
+Più interessante è invece osservare il comportamento delle direzioni di Esportazioni e Produzione Industriale nei confronti delle Vendite: prese isolate nei test bivariati portano a non-rifiuti di $H_0$ con p-value anche molto alti (0.4862, 0.1383), ma dai test trivariati entrambi risultano avere Granger-causalità significativa (p-value = 0.0422 e 0.0123). Questo può significare che i valori di Esportazioni e Produzione Industriale contengano informazione presente solo quando entrambe sono inserite in un modello per Vendite, e che tale informazione venga persa quando vengono considerate individualmente, arrivando quindi ad ipotizzare - con una certa cautela - che si possa rilevare una Granger-causalità nel sistema (Esportazioni & Produzione Industriale) $\rightarrow$ Vendite. Tale ipotesi potrebbe essere corroborata dal fatto che, come visto nel Laboratorio 1, Esportazioni e Produzione Industriale hanno una correlazione allo stesso istante piuttosto elevata, indicando che le due variabili potrebbero condividere molta informazione.  
 
-## 5. Interpretazione Economica e Limiti
+È importante notare comunque che queste relazioni sono tutte riferite alle prime differenze logaritmiche delle 3 serie considerate, e non ai livelli originali effettivi. Si sottolinea inoltre che il rifiuto dell'ipotesi nulla nei test di Granger attesta la presenza di informazione predittiva statistica nei ritardi storici e non costituisce una prova di causalità economica di tipo strutturale; questa influenza nel tempo è diversa dalla correlazione diretta dei residui, che misura la reazione simultanea delle tre variabili a shock economici imprevisti. Tra i principali limiti dell'analisi condotta si evidenziano l'incapacità del modello in differenze di catturare eventuali relazioni di equilibrio di lungo periodo e la presenza di effetti ARCH e non-normalità nei residui, che impongono cautela nell'affidabilità dei p-value basati sull'assunzione gaussiana.  
 
-### Sintesi delle Relazioni Predittive
+*Nota: l’intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice in R, nella formattazione del documento in R Markdown e LaTeX, e come ausilio nella discussione e interpretazione dei risultati econometrici. La scelta dei metodi statistici, la scelta e l’analisi dei dati e le interpretazioni di grafici e modelli restano prevalentemente a cura degli autori.*
 
-Le analisi condotte sulle variazioni logaritmiche trimestrali delle serie storiche italiane evidenziano: 1. **Causalità bidirezionale tra Esportazioni e Produzione Industriale:** Le oscillazioni del commercio estero anticipano l'attività produttiva interna e, al contempo, la produzione industriale fornisce informazione utile a prevedere la dinamica delle esportazioni future. 2. **Effetto di trascinamento della domanda interna (Vendite al dettaglio):** I consumi al dettaglio anticipano la Produzione Industriale a 6 mesi di distanza, ma tale legame emerge nettamente solo quando il sistema tiene conto del settore estero (Esportazioni). 3. **Correlazione Contemporanea vs Causalità di Granger:** La causalità di Granger rileva unicamente la presenza di **informazione predittiva aggiuntiva contenuta nei ritardi storici**. La matrice di covarianza dei residui $\hat{\Sigma}_{\varepsilon}$ mostra una marcata correlazione contemporanea non direzionale tra gli shock di Produzione ed Esportazioni, distinta dal legame sequenziale ritardato.
 
-### Limiti Econometrici del Modello
 
-- **Causalità di Granger vs Causalità Economica:** La reiezione dell'ipotesi nulla di Granger indica un contributo previsivo statistico e **non dimostra un nesso causale economico di tipo strutturale**.
-- **Trasformazione in Prime Differenze:** Poiché il modello è stimato in differenze prime logaritmiche, le conclusioni si riferiscono esclusivamente ai **tassi di crescita trimestrali** e non ai livelli delle serie.
-- **Assenza di Componente di Coinvegranzione (VECM):** L'approccio differenziato esclude la modellizzazione di eventuali relazioni di equilibrio di lungo periodo tra i livelli delle tre variabili economiche.
 
-\`\`\`
-
-### Principali Elementi Metodologici e Diagnostici Inclusi:
-
-1.  **Diagnostica Temporale dei Residui:**
-    - Visualizzazione grafica completa di residui, ACF univariata e CCF incrociata tra le tre equazioni.
-    - Test formali di autocorrelazione univariata (Ljung-Box) e multivariata (Portmanteau asintotico e Breusch-Godfrey).
-2.  **Diagnostica di Stabilità e Proprietà Eteroschedastiche:**
-    - Analisi del modulo degli autovalori della matrice compagna ($|\lambda| < 1$) a garanzia della stazionarietà del VAR(2).
-    - Test multivariato Jarque-Bera (con scomposizione in asimmetria e curtosi) e test multivariato ARCH.
-    - Discussione approfondita delle implicazioni econometriche delle deviazioni dalla gaussianità sulle stime OLS.
-3.  **Analisi della Causalità di Granger (Congiunta e Direzionale):**
-    - Test congiunti nel sistema a 3 variabili tramite `vars::causality()`.
-    - Tabella comparativa affiancata delle 6 direzioni causali, confrontando le restrizioni nell'equazione del VAR trivariato (`car::linearHypothesis`) con i test bivariati tradizionali (`lmtest::grangertest`).
-    - Spiegazione del ruolo dell'omissione della terza variabile (evidenziando come le Esportazioni permettano di far emergere la causalità dalle Vendite alla Produzione Industriale).
-4.  **Interpretazione Economica e Limiti:**
-    - Distinzione tra informazione predittiva nei ritardi e correlazione contemporanea nei residui.
-    - Inserimento esplicito dei limiti metodologici (natura non strutturale della causalità di Granger, focalizzazione sui tassi di crescita in prime differenze, assenza di analisi di cointegrazione/VECM).
