@@ -284,7 +284,7 @@ gb_ven_prod <- grangertest(prod_industriale ~ vendite, order = 2, data = train_d
 gb_prod_esp <- grangertest(esportazioni ~ prod_industriale, order = 2, data = train_diff)
 gb_prod_ven <- grangertest(vendite ~ prod_industriale, order = 2, data = train_diff)
 
-# Estrazione F, GdL e p-value per il Sistema Trivariato
+# Estrazione F, GdL e p-value per il Trivariato (indicizzazione [2] su ogni elemento)
 f_tri    <- c(lh_esp_ven$F[2], lh_esp_prod$F[2], lh_ven_esp$F[2],  
               lh_ven_prod$F[2], lh_prod_esp$F[2], lh_prod_ven$F[2])
 p_tri    <- c(lh_esp_ven$`Pr(>F)`[2], lh_esp_prod$`Pr(>F)`[2], lh_ven_esp$`Pr(>F)`[2], 
@@ -295,18 +295,18 @@ df2_tri  <- c(lh_esp_ven$Res.Df[2], lh_esp_prod$Res.Df[2], lh_ven_esp$Res.Df[2],
               lh_ven_prod$Res.Df[2], lh_prod_esp$Res.Df[2], lh_prod_ven$Res.Df[2])
 gdl_tri  <- paste0("(", df1_tri, ", ", df2_tri, ")")
 
-# Estrazione F, GdL e p-value per i Modelli Bivariati
+# Estrazione F, GdL e p-value per il Bivariato (indicizzazione [2] o [1] su ogni elemento)
 f_biv    <- c(gb_esp_ven$F[2], gb_esp_prod$F[2], gb_ven_esp$F[2], 
               gb_ven_prod$F[2], gb_prod_esp$F[2], gb_prod_ven$F[2])
 p_biv    <- c(gb_esp_ven$`Pr(>F)`[2], gb_esp_prod$`Pr(>F)`[2], gb_ven_esp$`Pr(>F)`[2],  
               gb_ven_prod$`Pr(>F)`[2], gb_prod_esp$`Pr(>F)`[2], gb_prod_ven$`Pr(>F)`[2])
 df1_biv  <- c(abs(gb_esp_ven$Df[2]), abs(gb_esp_prod$Df[2]), abs(gb_ven_esp$Df[2]), 
               abs(gb_ven_prod$Df[2]), abs(gb_prod_esp$Df[2]), abs(gb_prod_ven$Df[2]))
-df2_biv  <- c(gb_esp_ven$Res.Df[2], gb_esp_prod$Res.Df[2], gb_ven_esp$Res.Df[2], 
-              gb_ven_prod$Res.Df[2], gb_prod_esp$Res.Df[2], gb_prod_ven$Res.Df[2])
+df2_biv  <- c(gb_esp_ven$Res.Df[1], gb_esp_prod$Res.Df[1], gb_ven_esp$Res.Df[1], 
+              gb_ven_prod$Res.Df[1], gb_prod_esp$Res.Df[1], gb_prod_ven$Res.Df[1])
 gdl_biv  <- paste0("(", df1_biv, ", ", df2_biv, ")")
 
-# Costruzione Tabella Comparativa
+# Costruzione Tabella Comparativa (ora tutti i vettori hanno esattamente 6 elementi)
 tab_compare <- data.frame(
   Direzione = c("Esportazioni -> Vendite", 
                 "Esportazioni -> Prod. Ind.", 
@@ -325,11 +325,15 @@ tab_compare <- data.frame(
   stringsAsFactors = FALSE
 )
 
-colnames(tab_compare) <- c("Direzione del Test", "F (Triv.)", "GdL (Triv.)", "p-val (Triv.)", "Dec. (Triv.)", 
-                           "F (Biv.)", "GdL (Biv.)", "p-val (Biv.)", "Dec. (Biv.)")
+# Nomi colonne senza suffissi (Tri) e (Biv)
+colnames(tab_compare) <- c("Direzione del Test", "F", "GdL", "p-value", "Decisione", 
+                           "F", "GdL", "p-value", "Decisione")
 
-kable(tab_compare, caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", 
+# Generazione Tabella LaTeX con intestazione raggruppata
+kable(tab_compare, 
+      caption = "Confronto dei test direzionali di Granger: Sistema Trivariato vs Modelli Bivariati (lags = 2)", 
       booktabs = TRUE, linesep = "", format = "latex", escape = FALSE, align = "lrcrl|rcrl") %>%
+  add_header_above(c(" " = 1, "Sistema Trivariato" = 4, "Modelli Bivariati" = 4), bold = TRUE) %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 
 ```
