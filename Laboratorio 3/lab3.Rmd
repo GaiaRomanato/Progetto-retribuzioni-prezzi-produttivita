@@ -43,7 +43,7 @@ var_fit <- VAR(train_diff, p = 2, type = "const")
 
 ## Richiamo del modello VAR(2) e scelta dell'ordinamento di Cholesky
 
-Per l'analisi delle dinamiche di risposta agli shock e della decomposizione della varianza si utilizza il modello VAR(2) stimato sulle differenze prime logaritmiche delle tre serie economiche italiane (Esportazioni reali, Vendite al dettaglio e Produzione Industriale), valutato sul periodo di training 1990 Q2 – 2016 Q4.
+Per l'analisi delle dinamiche di risposta agli shock e della decomposizione della varianza si utilizza il modello VAR(2) stimato sulle differenze prime logaritmiche delle tre serie economiche italiane (Esportazioni reali, Vendite al dettaglio e Produzione Industriale), valutato sul periodo di training 1990 Q1 – 2016 Q4.
 
 Dalla tabella dei residui delle tre equazioni del VAR in forma ridotta si notano correlazioni contemporanee non nulle (Tabella 1), quindi gli shock associati alle diverse variabili non risultano ortogonali. Per identificare shock strutturali interpretabili come esogeni e isolare l'effetto dinamico di uno shock su una singola variabile, è necessario ortogonalizzare i residui. A tal fine si utilizza la decomposizione di Cholesky, che introduce restrizioni ricorsive sulle relazioni contemporanee tra le variabili (orizzonte $t=0$).
 
@@ -63,7 +63,7 @@ In particolare, si nota una rilevante correlazione contemporanea positiva tra i 
 
 ## Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
 
-Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
+Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Esportazioni** $\rightarrow$ **Vendite** $\rightarrow$ **Produzione Industriale**.
 
 1.  **Esportazioni**: rappresenta la domanda estera esogena, guidata dai mercati internazionali. Nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
 2.  **Vendite al dettaglio**: misura l’andamento delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
@@ -154,7 +154,7 @@ tab_fevd1 <- data.frame(
 
 colnames(tab_fevd1) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
-kable(tab_fevd1, caption = "Ordinamento 1: Decomposizione dopo 1 e 8 trimestri", 
+kable(tab_fevd1, caption = "Ordinamento 1, Decomposizione dopo 1 e 8 trimestri", 
       booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
@@ -241,7 +241,7 @@ ggplot(df_fevd_long, aes(x = Lag, y = Percentuale, fill = Shock)) +
 
 Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate, si definisce un altro ordinamento: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
 
-In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni si trovano in posizione residuale. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
+In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni non influenzano le altre due variabili. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
 
 ```{r fig.align="center", fig.height=2.6, echo=FALSE}
 # Definizione del dataset con Ordinamento 2 (Inverso)
@@ -294,7 +294,7 @@ tab_fevd2 <- data.frame(
 
 colnames(tab_fevd2) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
-kable(tab_fevd2, caption = "Ordinamento 2: Decomposizione dopo 1 e 8 trimestri", 
+kable(tab_fevd2, caption = "Ordinamento 2, Decomposizione dopo 1 e 8 trimestri", 
       booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
