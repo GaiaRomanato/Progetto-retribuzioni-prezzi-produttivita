@@ -63,7 +63,7 @@ In particolare, si nota una rilevante correlazione contemporanea positiva tra i 
 
 ## Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
 
-Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva:
+Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
 
 1.  **Esportazioni**: rappresenta la domanda estera esogena, guidata dai mercati internazionali. Nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
 2.  **Vendite al dettaglio**: misura l’andamento delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
@@ -73,7 +73,7 @@ Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, dom
 
 Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni.
 
-```{r fig.align="center", fig.height=5.2, echo=FALSE}
+```{r fig.align="center", fig.height=5.1, echo=FALSE}
 # Definizione del dataset con Ordinamento 1
 train_ord1 <- train_diff[, c("esportazioni", "vendite", "prod_industriale")]
 var_ord1   <- VAR(train_ord1, p = 2, type = "const")
@@ -108,7 +108,7 @@ for (j in 1:3) { # Impulso (colonna)
 par(mfrow = c(1, 1))
 ```
 
-Si sceglie di approfondire tre coppie impulso-risposta:
+Si sceglie di approfondire le seguenti tre coppie impulso-risposta:
 
 1.  Esportazioni $\rightarrow$ Produzione Industriale (Grafico in alto a destra):
     - La risposta è positiva e immediata già all'istante zero ($h=0$).
@@ -124,11 +124,9 @@ Si sceglie di approfondire tre coppie impulso-risposta:
     - Il picco massimo è raggiunto proprio al 1° trimestre pari a $0.0027$, e risulta l'unico significativo.
     - L'effetto decade a $h=2$ e si azzera sostanzialmente a partire dal 3° trimestre.
 
-------------------------------------------------------------------------
+## Decomposizione della Varianza dell'Errore di Previsione (FEVD)
 
-## 3. Decomposizione della Varianza dell'Errore di Previsione (FEVD - Ordine 1)
-
-La decomposizione della varianza (FEVD) misura la quota percentuale dell'incertezza previsiva di ciascuna variabile attribuibile ai singoli shock del sistema agli orizzonti di **1 e 8 trimestri**.
+La decomposizione della varianza (FEVD) misura la quota percentuale dell'incertezza previsiva di ciascuna variabile attribuibile ai singoli shock del sistema agli orizzonti di 1 e 8 trimestri.
 
 ```{r echo=FALSE}
 fevd_ord1 <- fevd(var_ord1, n.ahead = 8)
@@ -151,16 +149,16 @@ tab_fevd1 <- data.frame(
 
 colnames(tab_fevd1) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
-kable(tab_fevd1, caption = "FEVD Ordinamento 1 (Esportazioni -> Vendite -> Prod. Industriale)", 
-      booktabs = TRUE, format = "latex", escape = FALSE) %>%
+kable(tab_fevd1, caption = "Decomposizione dopo 1 e 8 trimestri", 
+      booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-### Lettura delle quote percentuali FEVD (Tabella 2):
+Per le Esportazioni, al primo trimestre, il $100\%$ dell'incertezza previsiva è spiegato dal proprio shock (per costruzione della decomposizione di Cholesky). A 8 trimestri, la quota propria rimane nettamente dominante ($91.23\%$), con apporti marginali da parte della Produzione Industriale ($8.20\%$) e delle Vendite ($0.57\%$), a testimonianza della forte autonomia del settore estero.
 
-- **Esportazioni**: Al primo trimestre ($h=1$), il $100\%$ dell'incertezza previsiva è spiegato dal proprio shock (per costruzione della decomposizione di Cholesky). A 8 trimestri ($h=8$), la quota propria rimane nettamente dominante ($91.23\%$), con apporti marginali da parte della Produzione Industriale ($8.20\%$) e delle Vendite ($0.57\%$), a testimonianza della forte autonomia del settore estero.
-- **Vendite al dettaglio**: A $h=1$, il $97.42\%$ della varianza dell'errore di previsione è guidato da shock propri, mentre le Esportazioni spiegano il $2.58\%$ (con impatto della Produzione nullo per vincolo di identificazione). A 8 trimestri ($h=8$), la quota propria scende al $90.30\%$, mentre il contributo della Produzione Industriale sale al $6.48\%$ e quello delle Esportazioni al $3.21\%$, evidenziando l'influenza graduale dell'offerta produttiva sui consumi interni.
-- **Produzione industriale**: Già al primo trimestre ($h=1$), lo shock delle Esportazioni spiega un rilevante $36.37\%$ della varianza dell'errore di previsione, a fronte di una quota propria del $62.77\%$ (e dello $0.86\%$ per le Vendite). A 8 trimestri ($h=8$), la quota spiegata dalle Esportazioni sale ulteriormente al $43.63\%$ e quella delle Vendite al $3.98\%$ (per un totale di fattori di domanda pari al $47.61\%$), dimostrando che quasi la metà dell'incertezza sulla produzione industriale nel medio periodo dipende dalla domanda estera e domestica.
+Per le Vendite a $h=1$, il $97.42\%$ della varianza dell'errore di previsione è guidato da shock propri, mentre le esportazioni spiegano il $2.58\%$. A 8 trimestri, la quota propria scende al $90.30\%$, mentre il contributo della Produzione Industriale sale al $6.48\%$ e quello delle Esportazioni al $3.21\%$, evidenziando l'influenza graduale dell'offerta produttiva sui consumi interni.
+
+Per la Produzione industriale, già al primo trimestre lo shock delle Esportazioni spiega un rilevante $36.37\%$ della varianza dell'errore di previsione, a fronte di una quota propria del $62.77\%$. A 8 trimestri, la quota spiegata dalle Esportazioni sale ulteriormente al $43.63\%$ e quella delle Vendite al $3.98\%$ (per un totale di $47.61\%$), dimostrando che quasi la metà dell'incertezza sulla produzione industriale nel medio periodo dipende dalla domanda estera e interna.
 
 ````{=html}
 <!--
@@ -234,13 +232,11 @@ ggplot(df_fevd_long, aes(x = Lag, y = Percentuale, fill = Shock)) +
 -->
 ````
 
-------------------------------------------------------------------------
+## Confronto con un secondo ordinamento di Cholesky
 
-## 4. Confronto di sensibilità con un secondo ordinamento di Cholesky
+Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate, si definisce un altro ordinamento: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
 
-Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate, si definisce un **Ordinamento 2 (Alternativo / Inverso)**: **Produzione Industriale** $\rightarrow$ Vendite al dettaglio $\rightarrow$ Esportazioni.
-
-In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente ($t=0$) sia le vendite sia le esportazioni, mentre le esportazioni si trovano in posizione residuale. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
+In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni si trovano in posizione residuale. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
 
 ```{r echo=FALSE}
 # Definizione del dataset con Ordinamento 2 (Inverso)
@@ -270,8 +266,36 @@ tab_fevd2 <- data.frame(
 colnames(tab_fevd2) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
 kable(tab_fevd2, caption = "FEVD Ordinamento 2 (Prod. Industriale -> Vendite -> Esportazioni)", 
-      booktabs = TRUE, format = "latex", escape = FALSE) %>%
+      booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+```{r fig.align="center", fig.height=5.1, echo=FALSE}
+# Grafico delle IRF selezionate per l'Ordinamento 2
+par(mfrow = c(3, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0), cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+
+vars_names <- c("prod_industriale", "vendite", "esportazioni")
+titles_imp <- c("Prod. Ind.", "Vendite", "Esportazioni")
+titles_resp <- c("Prod. Ind.", "Vendite", "Esportazioni")
+
+for (j in 1:3) { # Impulso (colonna)
+  for (i in 1:3) { # Risposta (riga)
+    imp_name <- vars_names[j]
+    resp_name <- vars_names[i]
+    
+    val <- irf_ord2$irf[[imp_name]][, resp_name]
+    low <- irf_ord2$Lower[[imp_name]][, resp_name]
+    upp <- irf_ord2$Upper[[imp_name]][, resp_name]
+    
+    plot(0:8, val, type = "o", pch = 16, col = "#2878B5", ylim = range(c(low, upp, 0)),
+         xlab = "Trimestri", ylab = "Risposta",
+         main = paste(titles_imp[j], "->", titles_resp[i]))
+    lines(0:8, low, lty = 2, col = "#D73027")
+    lines(0:8, upp, lty = 2, col = "#D73027")
+    abline(h = 0, col = "gray40", lty = 3)
+  }
+}
+par(mfrow = c(1, 1))
 ```
 
 ### Confronto tra i due ordinamenti:
