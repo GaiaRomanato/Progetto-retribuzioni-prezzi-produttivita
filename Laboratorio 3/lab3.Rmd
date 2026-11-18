@@ -299,15 +299,27 @@ kable(tab_fevd2, caption = "Ordinamento 2, Decomposizione dopo 1 e 8 trimestri",
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-### Confronto tra i due ordinamenti:
+### Confronto tra i due ordinamenti
 
-1.  **Analisi delle IRF**:
-    - *Effetto a tempo zero (*$h=0$): Cambia significativamente in ragione dei vincoli triangolari. Mettendo la Produzione in prima posizione, la risposta iniziale delle Esportazioni allo shock di produzione diventa elevata già a $h=0$, assorbendo la correlazione contemporanea tra i residui ($\rho = 0.592$).
-    - *Dinamica ritardata (*$h \ge 1$): Dal 1° trimestre in poi, le traiettorie delle curve mantengono le medesime proprietà qualitative: picco di risposta entro 1-2 trimestri, medesimi segni e rientro completo verso lo zero entro 4 trimestri.
-2.  **Confronto delle quote FEVD (Tabella 2 vs Tabella 3)**:
-    - Al **primo trimestre (**$h=1$), la quota dell'incertezza delle Esportazioni spiegata dalla Produzione passa dallo $0\%$ (nell'Ordine 1) al $35.1\%$ (nell'Ordine 2). Analogamente, la Produzione spiega il $100\%$ della propria varianza a $h=1$ nell'Ordine 2.
-    - A **8 trimestri (**$h=8$), il peso proprio delle Esportazioni si attesta sul $61.2\%$ nell'Ordine 2 (rispetto al $91.23\%$ dell'Ordine 1), mentre il contributo della Produzione rimane sostanziale.
-    - La forte sensibilità dei risultati a $h=1$ conferma che le due variabili condividono molta informazione simultanea che il modello VAR ridotto non è in grado di attribuire univocamente senza un'ipotesi teorica di identificazione.
+Il confronto tra i due ordinamenti rivela che l'inversione delle relazioni causali modifica soprattutto l'impatto simultaneo a $t=0$, lasciando pressoché inalterate le dinamiche ritardate ($h \ge 1$):
+
+1. **Esportazioni $\rightarrow$ Produzione Industriale**: Nell'Ordinamento 1 (Esportazioni $1^a$), la reazione della produzione è immediata con un picco massimo al tempo zero ($h=0$, $+0.95\%$), rimanendo elevata a $h=1$ ($+0.88\%$). Nell'Ordinamento 2 (Esportazioni $3^a$), la risposta a $h=0$ è vincolata a zero per costruzione triangolare; la reazione diventa positiva dal $1^\circ$ trimestre ($h=1$), dove tocca il suo nuovo picco ($+0.38\%$). In entrambi i modelli, l'impatto si riassorbe completamente entro 4 trimestri (1 anno).
+2. **Vendite al dettaglio $\rightarrow$ Produzione Industriale**: Questa risposta mostra un'elevata stabilità. In entrambi gli ordinamenti, la reazione immediata a $h=0$ è trascurabile, mentre si registra il medesimo picco positivo al $2^\circ$ trimestre ($h=2$, $+0.35\%$ nell'Ordinamento 1 e $+0.38\%$ nell'Ordinamento 2). Questo ritardo di circa 6 mesi rispecchia i tempi tecnici necessari alle imprese produttive per ricevere ed evadere gli ordini di riassortimento dei magazzini commerciali.
+3. **Produzione Industriale $\rightarrow$ Vendite al dettaglio**: La dinamica risulta del tutto sovrapponibile. Dopo una risposta iniziale nulla o vicina allo zero a $h=0$, il picco massimo viene raggiunto al $1^\circ$ trimestre in entrambi gli schemi ($h=1$, $+0.27\%$ nell'Ordine 1 e $+0.25\%$ nell'Ordine 2), evidenziando l'effetto indiretto del reddito e dell'occupazione industriale sui consumi delle famiglie.
+
+### 4.2 Confronto della Decomposizione della Varianza (FEVD)
+
+La ripartizione dell'incertezza previsiva conferma che le variabili maggiormente legate da correlazione contemporanea residua ($\rho = 0.592$ tra Esportazioni e Produzione) sono quelle più sensibili alla posizione in Cholesky:
+
+* **Esportazioni**: Al $1^\circ$ trimestre ($h=1$), la quota di varianza spiegata da shock propri scende dal $100\%$ (Ordinamento 1) al $61.15\%$ (Ordinamento 2), poiché la Produzione Industriale (posta in $1^a$ posizione) assorbe subito il $36.37\%$ della variabilità. A 8 trimestri ($h=8$), la quota propria delle Esportazioni si riduce al $47.61\%$, mentre il contributo della Produzione sale al $49.19\%$.
+* **Produzione industriale**: Quando collocata in $1^a$ posizione (Ordinamento 2), la Produzione spiega il $100\%$ della propria varianza a $h=1$ e mantiene il $92.19\%$ a $h=8$. Nell'Ordinamento 1, invece, le Esportazioni ne spiegavano il $36.37\%$ a $h=1$ e il $43.63\%$ a $h=8$, a dimostrazione che la scomposizione a breve termine risente fortemente della variabile scelta come leader.
+* **Vendite al dettaglio**: Presentano un'autonomia pressoché totale in entrambi gli schemi. La quota di varianza spiegata da shock propri rimane superiore al $90\%$ sia a $h=1$ ($97.42\%$ nell'Ordine 1 vs $100\%$ nell'Ordine 2) sia ad $h=8$ ($90.30\%$ vs $92.30\%$), a conferma che la domanda interna risponde a dinamiche proprie ampiamente indipendenti dalle fluttuazioni contemporanee delle altre variabili.
+
+### 4.3 Sintesi: Effetti contemporanei vs. Dinamica ritardata
+
+La sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.592$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Al contrario, la sostanziale invarianza delle traiettorie a partire da $h \ge 1$ dimostra che le relazioni causali intertemporali (il ritardo di 2 trimestri della produzione sulle vendite e il trascinamento estero) costituiscono proprietà empiriche robuste del sistema economico italiano.
+
+---
 
 ------------------------------------------------------------------------
 
