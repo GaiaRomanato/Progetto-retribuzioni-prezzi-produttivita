@@ -73,7 +73,7 @@ Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, dom
 
 Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni.
 
-```{r fig.align="center", fig.height=5.1, echo=FALSE}
+```{r fig.align="center", fig.height=2.6, echo=FALSE}
 # Definizione del dataset con Ordinamento 1
 train_ord1 <- train_diff[, c("esportazioni", "vendite", "prod_industriale")]
 var_ord1   <- VAR(train_ord1, p = 2, type = "const")
@@ -81,45 +81,50 @@ var_ord1   <- VAR(train_ord1, p = 2, type = "const")
 set.seed(123)
 irf_ord1 <- irf(var_ord1, n.ahead = 8, ortho = TRUE, boot = TRUE, ci = 0.95, runs = 500)
 
-# Grafico delle IRF selezionate per l'Ordinamento 1
-par(mfrow = c(3, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0), cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+# Coppie selezionate: impulso -> risposta
+coppie <- list(
+  c("esportazioni",     "prod_industriale"),
+  c("vendite",          "prod_industriale"),
+  c("prod_industriale", "vendite")
+)
 
-vars_names <- c("esportazioni", "vendite", "prod_industriale")
-titles_imp <- c("Esportazioni", "Vendite", "Prod. Ind.")
-titles_resp <- c("Esportazioni", "Vendite", "Prod. Ind.")
+etichette <- c(esportazioni = "Esportazioni",
+               vendite = "Vendite",
+               prod_industriale = "Prod. Ind.")
 
-for (j in 1:3) { # Impulso (colonna)
-  for (i in 1:3) { # Risposta (riga)
-    imp_name <- vars_names[j]
-    resp_name <- vars_names[i]
-    
-    val <- irf_ord1$irf[[imp_name]][, resp_name]
-    low <- irf_ord1$Lower[[imp_name]][, resp_name]
-    upp <- irf_ord1$Upper[[imp_name]][, resp_name]
-    
-    plot(0:8, val, type = "o", pch = 16, col = "#2878B5", ylim = range(c(low, upp, 0)),
-         xlab = "Trimestri", ylab = "Risposta",
-         main = paste(titles_imp[j], "->", titles_resp[i]))
-    lines(0:8, low, lty = 2, col = "#D73027")
-    lines(0:8, upp, lty = 2, col = "#D73027")
-    abline(h = 0, col = "gray40", lty = 3)
-  }
+par(mfrow = c(1, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0),
+    cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+
+for (cp in coppie) {
+  imp_name  <- cp[1]
+  resp_name <- cp[2]
+
+  val <- irf_ord1$irf[[imp_name]][, resp_name]
+  low <- irf_ord1$Lower[[imp_name]][, resp_name]
+  upp <- irf_ord1$Upper[[imp_name]][, resp_name]
+
+  plot(0:8, val, type = "o", pch = 16, col = "#2878B5",
+       ylim = range(c(low, upp, 0)),
+       xlab = "Trimestri", ylab = "Risposta",
+       main = paste(etichette[imp_name], "->", etichette[resp_name]))
+  axis(1, at = 0:8)
+  lines(0:8, low, lty = 2, col = "#D73027")
+  lines(0:8, upp, lty = 2, col = "#D73027")
+  abline(h = 0, col = "gray40", lty = 3)
 }
 par(mfrow = c(1, 1))
 ```
 
-Si sceglie di approfondire le seguenti tre coppie impulso-risposta:
-
-1.  Esportazioni $\rightarrow$ Produzione Industriale (Grafico in alto a destra):
+1.  Esportazioni $\rightarrow$ Produzione Industriale:
     - La risposta è positiva e immediata già all'istante zero ($h=0$).
     - Il valore massimo è raggiunto all'istante $h=0$ e vale circa $0.0095$, pari a un tasso di crescita del $0.95\%$, mantenendosi su livelli elevati anche al 1° trimestre.
     - L'impatto diminuisce sensibilmente al 2° trimestre e si riassorbe quasi del tutto azzerandosi a partire dal 4° trimestre in poi.
     - Le bande bootstrap al 95% rimangono interamente al di sopra dello zero per $h=0$ e $h=1$, confermando un effetto positivo statisticamente significativo nei primi 6 mesi.
-2.  Vendite al dettaglio $\rightarrow$ Produzione Industriale (Grafico al centro a destra):
+2.  Vendite al dettaglio $\rightarrow$ Produzione Industriale:
     - La risposta appare lievemente negativa e non significativa nei primi due trimestri, per poi mostrare un'inversione di tendenza con un picco positivo al 2° trimestre.
     - L'effetto si esaurisce rapidamente subito dopo il picco, rientrando vicino allo zero già dal 3° trimestre in poi.
     - Le bande di confidenza comprendono lo zero ad ogni trimestre.
-3.  Produzione Industriale $\rightarrow$ Vendite al dettaglio (Grafico al centro in basso):
+3.  Produzione Industriale $\rightarrow$ Vendite al dettaglio:
     - La risposta è esattamente nulla all'istante $h=0$ per vincolo di identificazione di Cholesky, ma diventa subito positiva al 1° trimestre.
     - Il picco massimo è raggiunto proprio al 1° trimestre pari a $0.0027$, e risulta l'unico significativo.
     - L'effetto decade a $h=2$ e si azzera sostanzialmente a partire dal 3° trimestre.
@@ -149,7 +154,7 @@ tab_fevd1 <- data.frame(
 
 colnames(tab_fevd1) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
-kable(tab_fevd1, caption = "Decomposizione dopo 1 e 8 trimestri", 
+kable(tab_fevd1, caption = "Ordinamento 1: Decomposizione dopo 1 e 8 trimestri", 
       booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
@@ -238,7 +243,7 @@ Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate
 
 In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni si trovano in posizione residuale. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
 
-```{r echo=FALSE}
+```{r fig.align="center", fig.height=2.6, echo=FALSE}
 # Definizione del dataset con Ordinamento 2 (Inverso)
 train_ord2 <- train_diff[, c("prod_industriale", "vendite", "esportazioni")]
 var_ord2   <- VAR(train_ord2, p = 2, type = "const")
@@ -247,6 +252,30 @@ set.seed(123)
 irf_ord2  <- irf(var_ord2, n.ahead = 8, ortho = TRUE, boot = TRUE, ci = 0.95, runs = 500)
 fevd_ord2 <- fevd(var_ord2, n.ahead = 8)
 
+par(mfrow = c(1, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0),
+    cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+
+for (cp in coppie) {
+  imp_name  <- cp[1]
+  resp_name <- cp[2]
+
+  val <- irf_ord2$irf[[imp_name]][, resp_name]
+  low <- irf_ord2$Lower[[imp_name]][, resp_name]
+  upp <- irf_ord2$Upper[[imp_name]][, resp_name]
+
+  plot(0:8, val, type = "o", pch = 16, col = "#2878B5",
+       ylim = range(c(low, upp, 0)),
+       xlab = "Trimestri", ylab = "Risposta",
+       main = paste(etichette[imp_name], "->", etichette[resp_name]))
+  axis(1, at = 0:8)
+  lines(0:8, low, lty = 2, col = "#D73027")
+  lines(0:8, upp, lty = 2, col = "#D73027")
+  abline(h = 0, col = "gray40", lty = 3)
+}
+par(mfrow = c(1, 1))
+```
+
+```{r echo=FALSE}
 tab_fevd2 <- data.frame(
   Variabile = c("Esportazioni", "Esportazioni", 
                 "Vendite al dettaglio", "Vendite al dettaglio", 
@@ -265,37 +294,9 @@ tab_fevd2 <- data.frame(
 
 colnames(tab_fevd2) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
 
-kable(tab_fevd2, caption = "FEVD Ordinamento 2 (Prod. Industriale -> Vendite -> Esportazioni)", 
+kable(tab_fevd2, caption = "Ordinamento 2: Decomposizione dopo 1 e 8 trimestri", 
       booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
-```
-
-```{r fig.align="center", fig.height=5.1, echo=FALSE}
-# Grafico delle IRF selezionate per l'Ordinamento 2
-par(mfrow = c(3, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0), cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
-
-vars_names <- c("prod_industriale", "vendite", "esportazioni")
-titles_imp <- c("Prod. Ind.", "Vendite", "Esportazioni")
-titles_resp <- c("Prod. Ind.", "Vendite", "Esportazioni")
-
-for (j in 1:3) { # Impulso (colonna)
-  for (i in 1:3) { # Risposta (riga)
-    imp_name <- vars_names[j]
-    resp_name <- vars_names[i]
-    
-    val <- irf_ord2$irf[[imp_name]][, resp_name]
-    low <- irf_ord2$Lower[[imp_name]][, resp_name]
-    upp <- irf_ord2$Upper[[imp_name]][, resp_name]
-    
-    plot(0:8, val, type = "o", pch = 16, col = "#2878B5", ylim = range(c(low, upp, 0)),
-         xlab = "Trimestri", ylab = "Risposta",
-         main = paste(titles_imp[j], "->", titles_resp[i]))
-    lines(0:8, low, lty = 2, col = "#D73027")
-    lines(0:8, upp, lty = 2, col = "#D73027")
-    abline(h = 0, col = "gray40", lty = 3)
-  }
-}
-par(mfrow = c(1, 1))
 ```
 
 ### Confronto tra i due ordinamenti:
