@@ -41,7 +41,7 @@ test_diff  <- window(data_diff, start = c(2017, 1))
 var_fit <- VAR(train_diff, p = 2, type = "const")
 ```
 
-## Richiamo del modello VAR(2) e scelta dell'ordinamento di Cholesky
+### Richiamo del modello VAR(2) e scelta dell'ordinamento di Cholesky
 
 Per l'analisi delle dinamiche di risposta agli shock e della decomposizione della varianza si utilizza il modello VAR(2) stimato sulle differenze prime logaritmiche delle tre serie economiche italiane (Esportazioni reali, Vendite al dettaglio e Produzione Industriale), valutato sul periodo di training 1990 Q1 – 2016 Q4.
 
@@ -61,7 +61,7 @@ kable(tab_cor, caption = "Matrice di correlazione contemporanea dei residui del 
 
 In particolare, si nota una rilevante correlazione contemporanea positiva tra i residui delle Esportazioni e della Produzione Industriale ($\rho = 0.603$), a conferma che shock macroeconomici non previsti colpiscono simultaneamente il settore estero e l'attività produttiva nazionale. Al contrario, la correlazione contemporanea tra Vendite e Produzione Industriale risulta quasi nulla ($\rho = 0.005$).
 
-## Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
+### Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
 
 Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Esportazioni** $\rightarrow$ **Vendite** $\rightarrow$ **Produzione Industriale**.
 
@@ -69,11 +69,11 @@ Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, dom
 2.  **Vendite al dettaglio**: misura l’andamento delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
 3.  **Produzione industriale**: settore produttivo. Nello stesso trimestre assorbe in via residuale gli shock provenienti sia dalla domanda estera (esportazioni) sia da quella interna (vendite).
 
-## Funzioni di Risposta agli Shock (IRF Ortogonalizzate)
+<!-- ## Funzioni di Risposta agli Shock (IRF Ortogonalizzate) -->
 
 Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni.
 
-```{r fig.align="center", fig.height=2.6, echo=FALSE}
+```{r fig.align="center", fig.height=2.1, echo=FALSE}
 # Definizione del dataset con Ordinamento 1
 train_ord1 <- train_diff[, c("esportazioni", "vendite", "prod_industriale")]
 var_ord1   <- VAR(train_ord1, p = 2, type = "const")
@@ -129,7 +129,7 @@ par(mfrow = c(1, 1))
     - Il picco massimo è raggiunto proprio al 1° trimestre pari a $0.0027$, e risulta l'unico significativo.
     - L'effetto decade a $h=2$ e si azzera sostanzialmente a partire dal 3° trimestre.
 
-## Decomposizione della Varianza dell'Errore di Previsione (FEVD)
+### Decomposizione della Varianza dell'Errore di Previsione (FEVD)
 
 La decomposizione della varianza (FEVD) misura la quota percentuale dell'incertezza previsiva di ciascuna variabile attribuibile ai singoli shock del sistema agli orizzonti di 1 e 8 trimestri.
 
@@ -237,13 +237,13 @@ ggplot(df_fevd_long, aes(x = Lag, y = Percentuale, fill = Shock)) +
 -->
 ````
 
-## Confronto con un secondo ordinamento di Cholesky
+### Confronto con un secondo ordinamento di Cholesky
 
 Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate, si definisce un altro ordinamento: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
 
 In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni non influenzano le altre due variabili. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
 
-```{r fig.align="center", fig.height=2.6, echo=FALSE}
+```{r fig.align="center", fig.height=2.1, echo=FALSE}
 # Definizione del dataset con Ordinamento 2 (Inverso)
 train_ord2 <- train_diff[, c("prod_industriale", "vendite", "esportazioni")]
 var_ord2   <- VAR(train_ord2, p = 2, type = "const")
@@ -299,31 +299,21 @@ kable(tab_fevd2, caption = "Ordinamento 2, Decomposizione dopo 1 e 8 trimestri",
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-### Confronto tra i due ordinamenti
-
 Il confronto tra i due ordinamenti rivela che l'inversione delle relazioni causali modifica soprattutto l'impatto simultaneo a $t=0$, lasciando pressoché inalterate le dinamiche ritardate ($h \ge 1$):
 
-1. **Esportazioni $\rightarrow$ Produzione Industriale**: Nell'Ordinamento 1 (Esportazioni $1^a$), la reazione della produzione è immediata con un picco massimo al tempo zero ($h=0$, $+0.95\%$), rimanendo elevata a $h=1$ ($+0.88\%$). Nell'Ordinamento 2 (Esportazioni $3^a$), la risposta a $h=0$ è vincolata a zero per costruzione triangolare; la reazione diventa positiva dal $1^\circ$ trimestre ($h=1$), dove tocca il suo nuovo picco ($+0.38\%$). In entrambi i modelli, l'impatto si riassorbe completamente entro 4 trimestri (1 anno).
+1. **Esportazioni $\rightarrow$ Produzione Industriale**: Mentre nell'Ordinamento 1 (Esportazioni come $1^a$) la reazione della produzione è immediata con un picco massimo al tempo zero ($h=0$, $+0.95\%$), rimanendo elevata a $h=1$ ($+0.88\%$), nell'Ordinamento 2 (Esportazioni come $3^a$), la risposta a $h=0$ è vincolata a zero per costruzione triangolare; la reazione diventa positiva dal $1^\circ$ trimestre ($h=1$), dove tocca il suo nuovo picco ($+0.38\%$). In entrambi i modelli, l'impatto si riassorbe completamente entro 4 trimestri (1 anno).
 2. **Vendite al dettaglio $\rightarrow$ Produzione Industriale**: Questa risposta mostra un'elevata stabilità. In entrambi gli ordinamenti, la reazione immediata a $h=0$ è trascurabile, mentre si registra il medesimo picco positivo al $2^\circ$ trimestre ($h=2$, $+0.35\%$ nell'Ordinamento 1 e $+0.38\%$ nell'Ordinamento 2). Questo ritardo di circa 6 mesi rispecchia i tempi tecnici necessari alle imprese produttive per ricevere ed evadere gli ordini di riassortimento dei magazzini commerciali.
-3. **Produzione Industriale $\rightarrow$ Vendite al dettaglio**: La dinamica risulta del tutto sovrapponibile. Dopo una risposta iniziale nulla o vicina allo zero a $h=0$, il picco massimo viene raggiunto al $1^\circ$ trimestre in entrambi gli schemi ($h=1$, $+0.27\%$ nell'Ordine 1 e $+0.25\%$ nell'Ordine 2), evidenziando l'effetto indiretto del reddito e dell'occupazione industriale sui consumi delle famiglie.
+3. **Produzione Industriale $\rightarrow$ Vendite al dettaglio**: La dinamica nei due casi risulta del tutto sovrapponibile. Dopo una risposta iniziale nulla o vicina allo zero a $h=0$, il picco massimo viene raggiunto al $1^\circ$ trimestre in entrambi gli schemi ($h=1$, $+0.27\%$ nell'Ordine 1 e $+0.25\%$ nell'Ordine 2), evidenziando l'effetto indiretto del reddito e dell'occupazione industriale sui consumi delle famiglie.  
 
-### 4.2 Confronto della Decomposizione della Varianza (FEVD)
-
-La ripartizione dell'incertezza previsiva conferma che le variabili maggiormente legate da correlazione contemporanea residua ($\rho = 0.592$ tra Esportazioni e Produzione) sono quelle più sensibili alla posizione in Cholesky:
+Confrontando le FEVD dei due ordinamenti è possibile osservare quanto la ripartizione della varianza degli errori di previsione dipenda dall'ordinamento scelto:
 
 * **Esportazioni**: Al $1^\circ$ trimestre ($h=1$), la quota di varianza spiegata da shock propri scende dal $100\%$ (Ordinamento 1) al $61.15\%$ (Ordinamento 2), poiché la Produzione Industriale (posta in $1^a$ posizione) assorbe subito il $36.37\%$ della variabilità. A 8 trimestri ($h=8$), la quota propria delle Esportazioni si riduce al $47.61\%$, mentre il contributo della Produzione sale al $49.19\%$.
 * **Produzione industriale**: Quando collocata in $1^a$ posizione (Ordinamento 2), la Produzione spiega il $100\%$ della propria varianza a $h=1$ e mantiene il $92.19\%$ a $h=8$. Nell'Ordinamento 1, invece, le Esportazioni ne spiegavano il $36.37\%$ a $h=1$ e il $43.63\%$ a $h=8$, a dimostrazione che la scomposizione a breve termine risente fortemente della variabile scelta come leader.
 * **Vendite al dettaglio**: Presentano un'autonomia pressoché totale in entrambi gli schemi. La quota di varianza spiegata da shock propri rimane superiore al $90\%$ sia a $h=1$ ($97.42\%$ nell'Ordine 1 vs $100\%$ nell'Ordine 2) sia ad $h=8$ ($90.30\%$ vs $92.30\%$), a conferma che la domanda interna risponde a dinamiche proprie ampiamente indipendenti dalle fluttuazioni contemporanee delle altre variabili.
 
-### 4.3 Sintesi: Effetti contemporanei vs. Dinamica ritardata
+In sintesi, la sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.603$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Al contrario, il fatto che le traiettorie rimangano sostanzialmente invariate per $h \geq 1$ indica che le relazioni tra le variabili nei trimestri successivi (l'effetto ritardato di due trimestri della produzione sulle vendite e l'effetto delle esportazioni) sono abbastanza stabili e non dipendono molto dall'ordinamento scelto.
 
-La sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.592$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Al contrario, la sostanziale invarianza delle traiettorie a partire da $h \ge 1$ dimostra che le relazioni causali intertemporali (il ritardo di 2 trimestri della produzione sulle vendite e il trascinamento estero) costituiscono proprietà empiriche robuste del sistema economico italiano.
-
----
-
-------------------------------------------------------------------------
-
-## 5. Conclusione economica e limiti dell'analisi
+### Conclusione economica e limiti dell'analisi
 
 ### Sintesi delle evidenze economiche:
 
@@ -338,3 +328,5 @@ L'analisi empirica delle IRF e della FEVD conferma che la crescita delle **Espor
 ------------------------------------------------------------------------
 
 *Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nella sintesi delle interpretazioni econometriche.*
+
+
