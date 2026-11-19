@@ -41,7 +41,7 @@ test_diff  <- window(data_diff, start = c(2017, 1))
 var_fit <- VAR(train_diff, p = 2, type = "const")
 ```
 
-### Richiamo del modello VAR(2) e scelta dell'ordinamento di Cholesky
+### Richiamo del modello VAR(2)
 
 Per l'analisi delle dinamiche di risposta agli shock e della decomposizione della varianza si utilizza il modello VAR(2) stimato sulle differenze prime logaritmiche delle tre serie economiche italiane (Esportazioni reali, Vendite al dettaglio e Produzione Industriale), valutato sul periodo di training 1990 Q1 – 2016 Q4.
 
@@ -73,7 +73,7 @@ Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, dom
 
 Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni.
 
-```{r fig.align="center", fig.height=2.1, echo=FALSE}
+```{r fig.align="center", fig.height=2, echo=FALSE}
 # Definizione del dataset con Ordinamento 1
 train_ord1 <- train_diff[, c("esportazioni", "vendite", "prod_industriale")]
 var_ord1   <- VAR(train_ord1, p = 2, type = "const")
@@ -311,19 +311,17 @@ Confrontando le FEVD dei due ordinamenti è possibile osservare quanto la ripart
 * **Produzione industriale**: Quando collocata in $1^a$ posizione (Ordinamento 2), la Produzione spiega il $100\%$ della propria varianza a $h=1$ e mantiene il $92.19\%$ a $h=8$. Nell'Ordinamento 1, invece, le Esportazioni ne spiegavano il $36.37\%$ a $h=1$ e il $43.63\%$ a $h=8$, a dimostrazione che la scomposizione a breve termine risente fortemente della variabile scelta come leader.
 * **Vendite al dettaglio**: Presentano un'autonomia pressoché totale in entrambi gli schemi. La quota di varianza spiegata da shock propri rimane superiore al $90\%$ sia a $h=1$ ($97.42\%$ nell'Ordine 1 vs $100\%$ nell'Ordine 2) sia ad $h=8$ ($90.30\%$ vs $92.30\%$), a conferma che la domanda interna risponde a dinamiche proprie ampiamente indipendenti dalle fluttuazioni contemporanee delle altre variabili.
 
-In sintesi, la sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.603$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Al contrario, il fatto che le traiettorie rimangano sostanzialmente invariate per $h \geq 1$ indica che le relazioni tra le variabili nei trimestri successivi (l'effetto ritardato di due trimestri della produzione sulle vendite e l'effetto delle esportazioni) sono abbastanza stabili e non dipendono molto dall'ordinamento scelto.
+In sintesi, la sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.603$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Inoltre, il fatto che le traiettorie rimangano sostanzialmente invariate per $h \geq 1$ indica che le relazioni tra le variabili nei trimestri successivi (l'effetto ritardato di due trimestri della produzione sulle vendite e l'effetto delle esportazioni) sono abbastanza stabili e non dipendono molto dall'ordinamento scelto.
 
 ### Conclusione economica e limiti dell'analisi
 
-### Sintesi delle evidenze economiche:
+L'analisi empirica delle IRF e della FEVD suggerisce che la crescita delle Esportazioni funga da principale propulsore per l'economia italiana, trascinando con decisione sia la Produzione Industriale sia le Vendite al dettaglio. La produzione risponde con un ritardo di 1-2 trimestri agli ordini di riassortimento commerciale interni ed esteri. L'inversione dell'ordinamento di Cholesky modifica l'impatto simultaneo a $h=0$, ma conferma la robustezza delle risposte dinamiche differite nel medio periodo ($h \ge 1$), con shock che si esauriscono entro 1 anno.
 
-L'analisi empirica delle IRF e della FEVD conferma che la crescita delle **Esportazioni** funge da principale propulsore per l'economia italiana (*export-led growth*), trascinando con decisione sia la **Produzione Industriale** sia le **Vendite al dettaglio**. La produzione risponde con un ritardo di 1-2 trimestri agli ordini di riassortimento commerciale interni ed esteri. L'inversione dell'ordinamento di Cholesky modifica l'impatto simultaneo a $h=0$, ma conferma la robustezza delle risposte dinamiche differite nel medio periodo ($h \ge 1$), con shock che si esauriscono entro 1 anno.
+Si segnalano comunque alcuni limiti:
 
-### Limiti dell'analisi:
-
-1.  **Arbitrarietà dell'ordinamento di Cholesky**: L'ortogonalizzazione ricorsiva si basa su vincoli triangolari a tempo zero che non derivano da un modello strutturale teorico (SVAR).
-2.  **Specificazione sulle differenze (Breve periodo)**: Aver stimato il VAR in differenze descrive unicamente i tassi di crescita trimestrali, trascurando eventuali relazioni di equilibrio di lungo periodo nei livelli (cointegrazione).
-3.  **Volatilità e non-normalità dei residui**: Come evidenziato dai test diagnostici del Laboratorio 2 (presenza di effetti ARCH ed eccesso di curtosi), la varianza residua non è costante nel tempo, raccomandando cautela nell'interpretazione puntuale dell'ampiezza delle bande bootstrap.
+1.  **Arbitrarietà dell'ordinamento di Cholesky**: L'ortogonalizzazione ricorsiva si basa su vincoli triangolari a tempo zero che dipendono dall'ordinamento scelto in modo empirico.
+2.  **Specificazione sulle differenze (Breve periodo)**: Con i dati disponibili il modello VAR descrive unicamente i tassi di crescita trimestrali, trascurando eventuali relazioni di equilibrio di lungo periodo nei livelli.
+3.  **Volatilità e non-normalità dei residui**: Come evidenziato dai test diagnostici del Laboratorio 2 (presenza di effetti ARCH ed eccesso di curtosi), la varianza residua non è costante nel tempo, quindi è necessaria cautela nell'interpretazione puntuale dell'ampiezza delle bande bootstrap.
 
 ------------------------------------------------------------------------
 
