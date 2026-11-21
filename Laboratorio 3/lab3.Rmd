@@ -8,9 +8,9 @@ header-includes:
   - \usepackage{titling}
   - \setlength{\droptitle}{-2cm}
   - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
-  - \posttitle{\end{center}\vspace{-0.5cm}}
-  - \preauthor{\begin{center}\large\vspace{-0.1cm}}
-  - \postauthor{\end{center}\vspace{-2cm}}
+  - \posttitle{\end{center}\vspace{-0.4cm}}
+  - \preauthor{\begin{center}\large}
+  - \postauthor{\end{center}\vspace{-1.7cm}}
 ---
 
 ```{r setup, include=FALSE}
@@ -66,7 +66,7 @@ In particolare, si nota una rilevante correlazione contemporanea positiva tra i 
 Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Esportazioni** $\rightarrow$ **Vendite** $\rightarrow$ **Produzione Industriale**.
 
 1.  **Esportazioni**: rappresenta la domanda estera esogena, guidata dai mercati internazionali. Nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
-2.  **Vendite al dettaglio**: misura l’andamento delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
+2.  **Vendite al dettaglio**: misura l’andamento del volume delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
 3.  **Produzione industriale**: settore produttivo. Nello stesso trimestre assorbe in via residuale gli shock provenienti sia dalla domanda estera (esportazioni) sia da quella interna (vendite).
 
 <!-- ## Funzioni di Risposta agli Shock (IRF Ortogonalizzate) -->
