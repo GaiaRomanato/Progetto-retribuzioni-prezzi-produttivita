@@ -253,4 +253,4 @@ Si segnalano comunque alcuni limiti:
 
 ------------------------------------------------------------------------
 
-*Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nella sintesi delle interpretazioni econometriche.*
+*Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nelle interpretazioni econometriche. La scelta dei metodi statistici, l’analisi dei dati e le interpretazioni di grafici e modelli restano prevalentemente a cura degli autori.*
