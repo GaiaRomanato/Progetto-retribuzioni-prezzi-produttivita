@@ -5,12 +5,14 @@ author: "I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia"
 output: pdf_document
 header-includes:
   - \usepackage[italian]{babel}
+  - \geometry{margin=2cm}
   - \usepackage{titling}
   - \setlength{\droptitle}{-2cm}
   - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
   - \posttitle{\end{center}\vspace{-0.4cm}}
   - \preauthor{\begin{center}\large}
   - \postauthor{\end{center}\vspace{-1.7cm}}
+  - \geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
 ---
 
 ```{r setup, include=FALSE}
