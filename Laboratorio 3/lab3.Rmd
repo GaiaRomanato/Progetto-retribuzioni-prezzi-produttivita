@@ -64,14 +64,15 @@ In particolare, si nota una rilevante correlazione contemporanea positiva tra i 
 ### Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
 
 Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Esportazioni** $\rightarrow$ **Vendite** $\rightarrow$ **Produzione Industriale**.
+La scelta riflette l'ipotesi che le esportazioni, essendo influenzate anche dalla domanda internazionale, possano reagire meno rapidamente alle condizioni interne dell'economia italiana rispetto alle altre variabili considerate. Le vendite al dettaglio possono invece reagire contemporaneamente alle variazioni delle esportazioni, mentre si ipotizza che la produzione industriale assorba nello stesso trimestre gli shock provenienti da entrambe le componenti della domanda. Nello specifico:
 
-1.  **Esportazioni**: rappresenta la domanda estera esogena, guidata dai mercati internazionali. Nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
+1.  **Esportazioni**: rappresenta la domanda estera, guidata dai mercati internazionali. Quindi nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
 2.  **Vendite al dettaglio**: misura l’andamento del volume delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
 3.  **Produzione industriale**: settore produttivo. Nello stesso trimestre assorbe in via residuale gli shock provenienti sia dalla domanda estera (esportazioni) sia da quella interna (vendite).
 
 <!-- ## Funzioni di Risposta agli Shock (IRF Ortogonalizzate) -->
 
-Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni.
+Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni e si riportano i risultati per la risposta della produzione industriale a uno shock delle esportazioni, per la risposta della produzione industriale a uno shock delle vendite al dettaglio e per la risposta delle vendite al dettaglio a uno shock della produzione industriale.
 
 ```{r fig.align="center", fig.height=2, echo=FALSE}
 # Definizione del dataset con Ordinamento 1
@@ -121,8 +122,8 @@ par(mfrow = c(1, 1))
     - L'impatto diminuisce sensibilmente al 2° trimestre e si riassorbe quasi del tutto azzerandosi a partire dal 4° trimestre in poi.
     - Le bande bootstrap al 95% rimangono interamente al di sopra dello zero per $h=0$ e $h=1$, confermando un effetto positivo statisticamente significativo nei primi 6 mesi.
 2.  **Vendite al dettaglio** $\rightarrow$ **Produzione Industriale**:
-    - La risposta appare lievemente negativa e non significativa nei primi due trimestri, per poi mostrare un'inversione di tendenza con un picco positivo al 2° trimestre.
-    - L'effetto si esaurisce rapidamente subito dopo il picco, rientrando vicino allo zero già dal 3° trimestre in poi.
+    - La risposta appare lievemente negativa e non significativa nei primi due trimestri, per poi mostrare un'inversione di tendenza con un picco positivo al 2° trimestre con un valore pari a circa $0.0034$.
+    - L'effetto tende a riassorbirsi rapidamente subito dopo il picco, rientrando vicino allo zero già dal 3° trimestre in poi.
     - Le bande di confidenza comprendono lo zero ad ogni trimestre.
 3.  **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio**:
     - La risposta è esattamente nulla all'istante $h=0$ per vincolo di identificazione di Cholesky, ma diventa subito positiva al 1° trimestre.
@@ -163,7 +164,7 @@ Per le Esportazioni, al primo trimestre, il $100\%$ dell'incertezza previsiva è
 
 Per le Vendite a $h=1$, il $97.42\%$ della varianza dell'errore di previsione è guidato da shock propri, mentre le esportazioni spiegano il $2.58\%$. A 8 trimestri, la quota propria scende al $90.30\%$, mentre il contributo della Produzione Industriale sale al $6.48\%$ e quello delle Esportazioni al $3.21\%$, evidenziando l'influenza graduale dell'offerta produttiva sui consumi interni.
 
-Per la Produzione industriale, già al primo trimestre lo shock delle Esportazioni spiega un rilevante $36.37\%$ della varianza dell'errore di previsione, a fronte di una quota propria del $62.77\%$. A 8 trimestri, la quota spiegata dalle Esportazioni sale ulteriormente al $43.63\%$ e quella delle Vendite al $3.98\%$ (per un totale di $47.61\%$), dimostrando che quasi la metà dell'incertezza sulla produzione industriale nel medio periodo dipende dalla domanda estera e interna.
+Per la Produzione industriale, già al primo trimestre lo shock delle Esportazioni spiega un rilevante $36.37\%$ della varianza dell'errore di previsione, a fronte di una quota propria del $62.77\%$ e il restante $0.86%$ è spiegato dallo shock associato alle vendite. A 8 trimestri, la quota spiegata dalle Esportazioni sale ulteriormente al $43.63\%$ e quella delle Vendite al $3.98\%$ (per un totale di $47.61\%$), mentre la quota attribuita allo shock proprio scende al $52.39%$ dimostrando che quasi la metà dell'incertezza sulla produzione industriale nel medio periodo dipende dalla domanda estera e interna.
 
 ### Confronto con un secondo ordinamento di Cholesky
 
