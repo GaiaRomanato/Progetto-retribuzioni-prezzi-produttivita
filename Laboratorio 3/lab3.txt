@@ -1,0 +1,259 @@
+---
+title: "Laboratorio 3"
+subtitle: "Progetto B (Italia): Produzione industriale, Vendite al dettaglio ed Esportazioni reali"
+author: "I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia"
+output: pdf_document
+header-includes:
+  - \usepackage[italian]{babel}
+  - \geometry{margin=2cm}
+  - \usepackage{titling}
+  - \setlength{\droptitle}{-2cm}
+  - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
+  - \posttitle{\end{center}\vspace{-0.4cm}}
+  - \preauthor{\begin{center}\large}
+  - \postauthor{\end{center}\vspace{-1.7cm}}
+  - \geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.pos = "H")
+```
+
+```{r include=FALSE}
+library(readr)
+library(tidyverse)
+library(vars)
+library(lmtest)
+library(car)
+library(kableExtra)
+
+# Importazione dati e preparazione dataset (stesso setup dei Laboratori 1 e 2)
+data <- read.csv("../Dati/dataset.csv", row.names = 1)
+data <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
+           start = c(1990, 1), frequency = 4)
+
+data_log  <- log(data)
+data_diff <- diff(data_log)
+
+# Training set: 1990 Q2 - 2016 Q4 (108 osservazioni)
+train_diff <- window(data_diff, start = c(1990, 2), end = c(2016, 4))
+test_diff  <- window(data_diff, start = c(2017, 1))
+
+# Modello VAR(2) sulle differenze logaritmiche stimato nel Laboratorio 1 e 2
+var_fit <- VAR(train_diff, p = 2, type = "const")
+```
+
+### Richiamo del modello VAR(2)
+
+Per l'analisi delle dinamiche di risposta agli shock e della decomposizione della varianza si utilizza il modello VAR(2) stimato sulle differenze prime logaritmiche delle tre serie economiche italiane (Esportazioni reali, Vendite al dettaglio e Produzione Industriale), valutato sul periodo di training 1990 Q1 – 2016 Q4.
+
+Dalla tabella dei residui delle tre equazioni del VAR in forma ridotta si notano correlazioni contemporanee non nulle (Tabella 1), quindi gli shock associati alle diverse variabili non risultano ortogonali. Per identificare shock strutturali interpretabili come esogeni e isolare l'effetto dinamico di uno shock su una singola variabile, è necessario ortogonalizzare i residui. A tal fine si utilizza la decomposizione di Cholesky, che introduce restrizioni ricorsive sulle relazioni contemporanee tra le variabili (orizzonte $t=0$).
+
+```{r echo=FALSE}
+# Matrice di correlazione dei residui del VAR(2)
+cor_res <- cor(residuals(var_fit))
+tab_cor <- as.data.frame(round(cor_res, 3))
+rownames(tab_cor) <- c("Esportazioni", "Vendite", "Prod. industriale")
+colnames(tab_cor) <- c("Esportazioni", "Vendite", "Prod. industriale")
+
+kable(tab_cor, caption = "Matrice di correlazione contemporanea dei residui del VAR(2)", 
+      booktabs = TRUE, format = "latex", escape = FALSE) %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+In particolare, si nota una rilevante correlazione contemporanea positiva tra i residui delle Esportazioni e della Produzione Industriale ($\rho = 0.603$), a conferma che shock macroeconomici non previsti colpiscono simultaneamente il settore estero e l'attività produttiva nazionale. Al contrario, la correlazione contemporanea tra Vendite e Produzione Industriale risulta quasi nulla ($\rho = 0.005$).
+
+### Ordinamento 1: Esportazioni $\rightarrow$ Vendite $\rightarrow$ Produzione Industriale
+
+Si definisce un primo ordinamento basato sulla gerarchia tra domanda estera, domanda interna e offerta produttiva: **Esportazioni** $\rightarrow$ **Vendite** $\rightarrow$ **Produzione Industriale**.
+La scelta riflette l'ipotesi che le esportazioni, essendo influenzate anche dalla domanda internazionale, possano reagire meno rapidamente alle condizioni interne dell'economia italiana rispetto alle altre variabili considerate. Le vendite al dettaglio possono invece reagire contemporaneamente alle variazioni delle esportazioni, mentre si ipotizza che la produzione industriale assorba nello stesso trimestre gli shock provenienti da entrambe le componenti della domanda. Nello specifico:
+
+1.  **Esportazioni**: rappresenta la domanda estera, guidata dai mercati internazionali. Quindi nello stesso trimestre ($t=0$), uno shock alle esportazioni può influenzare contemporaneamente sia le vendite sia la produzione industriale, senza subire l'impatto immediato delle altre due variabili.
+2.  **Vendite al dettaglio**: misura l’andamento del volume delle vendite al dettaglio al netto dell’inflazione. Può reagire contemporaneamente allo shock di domanda estera (tramite le importazioni di beni di consumo), ma non risponde allo shock della produzione industriale.
+3.  **Produzione industriale**: settore produttivo. Nello stesso trimestre assorbe in via residuale gli shock provenienti sia dalla domanda estera (esportazioni) sia da quella interna (vendite).
+
+<!-- ## Funzioni di Risposta agli Shock (IRF Ortogonalizzate) -->
+
+Si calcolano le Funzioni di Risposta agli Shock (IRF) ortogonalizzate per un orizzonte di 8 trimestri (2 anni), con bande di confidenza bootstrap al 95% utilizzando 500 replicazioni e si riportano i risultati per la risposta della produzione industriale a uno shock delle esportazioni, per la risposta della produzione industriale a uno shock delle vendite al dettaglio e per la risposta delle vendite al dettaglio a uno shock della produzione industriale.
+
+```{r fig.align="center", fig.height=2, echo=FALSE}
+# Definizione del dataset con Ordinamento 1
+train_ord1 <- train_diff[, c("esportazioni", "vendite", "prod_industriale")]
+var_ord1   <- VAR(train_ord1, p = 2, type = "const")
+
+set.seed(123)
+irf_ord1 <- irf(var_ord1, n.ahead = 8, ortho = TRUE, boot = TRUE, ci = 0.95, runs = 500)
+
+# Coppie selezionate: impulso -> risposta
+coppie <- list(
+  c("esportazioni",     "prod_industriale"),
+  c("vendite",          "prod_industriale"),
+  c("prod_industriale", "vendite")
+)
+
+etichette <- c(esportazioni = "Esportazioni",
+               vendite = "Vendite",
+               prod_industriale = "Prod. Ind.")
+
+par(mfrow = c(1, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0),
+    cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+
+for (cp in coppie) {
+  imp_name  <- cp[1]
+  resp_name <- cp[2]
+
+  val <- irf_ord1$irf[[imp_name]][, resp_name]
+  low <- irf_ord1$Lower[[imp_name]][, resp_name]
+  upp <- irf_ord1$Upper[[imp_name]][, resp_name]
+
+  plot(0:8, val, type = "o", pch = 16, col = "#2878B5",
+       ylim = range(c(low, upp, 0)),
+       xlab = "Trimestri", ylab = "Risposta",
+       main = paste(etichette[imp_name], "->", etichette[resp_name]))
+  axis(1, at = 0:8)
+  lines(0:8, low, lty = 2, col = "#D73027")
+  lines(0:8, upp, lty = 2, col = "#D73027")
+  abline(h = 0, col = "gray40", lty = 3)
+}
+par(mfrow = c(1, 1))
+```
+
+1.  **Esportazioni** $\rightarrow$ **Produzione Industriale**:
+    - La risposta è positiva e immediata già all'istante zero ($h=0$).
+    - Il valore massimo è raggiunto all'istante $h=0$ e vale circa $0.0095$, mantenendosi su livelli elevati anche al 1° trimestre.
+    - L'impatto diminuisce sensibilmente al 2° trimestre e si riassorbe quasi del tutto azzerandosi a partire dal 4° trimestre in poi.
+    - Le bande bootstrap al 95% rimangono interamente al di sopra dello zero per $h=0$ e $h=1$, confermando un effetto positivo statisticamente significativo nei primi 6 mesi.
+2.  **Vendite al dettaglio** $\rightarrow$ **Produzione Industriale**:
+    - La risposta appare lievemente negativa e non significativa nei primi due trimestri, per poi mostrare un'inversione di tendenza con un picco positivo al 2° trimestre con un valore pari a circa $0.0034$.
+    - L'effetto tende a riassorbirsi rapidamente subito dopo il picco, rientrando vicino allo zero già dal 3° trimestre in poi.
+    - Le bande di confidenza comprendono lo zero ad ogni trimestre.
+3.  **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio**:
+    - La risposta è esattamente nulla all'istante $h=0$ per vincolo di identificazione di Cholesky, ma diventa subito positiva al 1° trimestre.
+    - Il picco massimo è raggiunto proprio al 1° trimestre pari a $0.0027$, e risulta l'unico significativo.
+    - L'effetto decade a $h=2$ e si azzera sostanzialmente a partire dal 3° trimestre.
+
+### Decomposizione della Varianza dell'Errore di Previsione (FEVD)
+
+La decomposizione della varianza (FEVD) misura la quota percentuale dell'incertezza previsiva di ciascuna variabile attribuibile ai singoli shock del sistema agli orizzonti di 1 e 8 trimestri.
+
+```{r echo=FALSE}
+fevd_ord1 <- fevd(var_ord1, n.ahead = 8)
+
+tab_fevd1 <- data.frame(
+  Variabile = c("Esportazioni", "Esportazioni", 
+                "Vendite al dettaglio", "Vendite al dettaglio", 
+                "Produzione industriale", "Produzione industriale"),
+  Orizzonte = rep(c("1 trimestre", "8 trimestri"), 3),
+  Shock_Esp  = round(c(fevd_ord1$esportazioni[1, "esportazioni"], fevd_ord1$esportazioni[8, "esportazioni"],
+                       fevd_ord1$vendite[1, "esportazioni"], fevd_ord1$vendite[8, "esportazioni"],
+                       fevd_ord1$prod_industriale[1, "esportazioni"], fevd_ord1$prod_industriale[8, "esportazioni"]) * 100, 2),
+  Shock_Ven  = round(c(fevd_ord1$esportazioni[1, "vendite"], fevd_ord1$esportazioni[8, "vendite"],
+                       fevd_ord1$vendite[1, "vendite"], fevd_ord1$vendite[8, "vendite"],
+                       fevd_ord1$prod_industriale[1, "vendite"], fevd_ord1$prod_industriale[8, "vendite"]) * 100, 2),
+  Shock_Prod = round(c(fevd_ord1$esportazioni[1, "prod_industriale"], fevd_ord1$esportazioni[8, "prod_industriale"],
+                       fevd_ord1$vendite[1, "prod_industriale"], fevd_ord1$vendite[8, "prod_industriale"],
+                       fevd_ord1$prod_industriale[1, "prod_industriale"], fevd_ord1$prod_industriale[8, "prod_industriale"]) * 100, 2)
+)
+
+colnames(tab_fevd1) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
+
+kable(tab_fevd1, caption = "Ordinamento 1, Decomposizione dopo 1 e 8 trimestri", 
+      booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+Per le Esportazioni, al primo trimestre, il $100\%$ dell'incertezza previsiva è spiegato dal proprio shock (per costruzione della decomposizione di Cholesky). A 8 trimestri, la quota propria rimane nettamente dominante ($91.23\%$), con apporti marginali da parte della Produzione Industriale ($8.20\%$) e delle Vendite ($0.57\%$), a testimonianza della forte autonomia del settore estero.
+
+Per le Vendite a $h=1$, il $97.42\%$ della varianza dell'errore di previsione è guidato da shock propri, mentre le esportazioni spiegano il $2.58\%$. A 8 trimestri, la quota propria scende al $90.30\%$, mentre il contributo della Produzione Industriale sale al $6.48\%$ e quello delle Esportazioni al $3.21\%$, evidenziando l'influenza graduale dell'offerta produttiva sui consumi interni.
+
+Per la Produzione industriale, già al primo trimestre lo shock delle Esportazioni spiega un rilevante $36.37\%$ della varianza dell'errore di previsione, a fronte di una quota propria del $62.77\%$ e il restante $0.86%$ è spiegato dallo shock associato alle vendite. A 8 trimestri, la quota spiegata dalle Esportazioni sale ulteriormente al $43.63\%$ e quella delle Vendite al $3.98\%$ (per un totale di $47.61\%$), mentre la quota attribuita allo shock proprio scende al $52.39%$ dimostrando che quasi la metà dell'incertezza sulla produzione industriale nel medio periodo dipende dalla domanda estera e interna.
+
+### Confronto con un secondo ordinamento di Cholesky
+
+Per verificare quanto i risultati dipendano dalle ipotesi contemporanee adottate, si definisce un altro ordinamento: **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio** $\rightarrow$ **Esportazioni**.
+
+In questo secondo schema, lo shock alla produzione industriale può influenzare contemporaneamente sia le vendite sia le esportazioni, mentre le esportazioni non influenzano le altre due variabili. Si riordina il dataset, si ristima il VAR sul medesimo training set e si ricalcolano IRF e FEVD.
+
+```{r fig.align="center", fig.height=2.1, echo=FALSE}
+# Definizione del dataset con Ordinamento 2 (Inverso)
+train_ord2 <- train_diff[, c("prod_industriale", "vendite", "esportazioni")]
+var_ord2   <- VAR(train_ord2, p = 2, type = "const")
+
+set.seed(123)
+irf_ord2  <- irf(var_ord2, n.ahead = 8, ortho = TRUE, boot = TRUE, ci = 0.95, runs = 500)
+fevd_ord2 <- fevd(var_ord2, n.ahead = 8)
+
+par(mfrow = c(1, 3), mar = c(3, 3, 2, 1), mgp = c(1.8, 0.5, 0),
+    cex.main = 0.8, cex.lab = 0.75, cex.axis = 0.7)
+
+for (cp in coppie) {
+  imp_name  <- cp[1]
+  resp_name <- cp[2]
+
+  val <- irf_ord2$irf[[imp_name]][, resp_name]
+  low <- irf_ord2$Lower[[imp_name]][, resp_name]
+  upp <- irf_ord2$Upper[[imp_name]][, resp_name]
+
+  plot(0:8, val, type = "o", pch = 16, col = "#2878B5",
+       ylim = range(c(low, upp, 0)),
+       xlab = "Trimestri", ylab = "Risposta",
+       main = paste(etichette[imp_name], "->", etichette[resp_name]))
+  axis(1, at = 0:8)
+  lines(0:8, low, lty = 2, col = "#D73027")
+  lines(0:8, upp, lty = 2, col = "#D73027")
+  abline(h = 0, col = "gray40", lty = 3)
+}
+par(mfrow = c(1, 1))
+```
+
+```{r echo=FALSE}
+tab_fevd2 <- data.frame(
+  Variabile = c("Esportazioni", "Esportazioni", 
+                "Vendite al dettaglio", "Vendite al dettaglio", 
+                "Produzione industriale", "Produzione industriale"),
+  Orizzonte = rep(c("1 trimestre", "8 trimestri"), 3),
+  Shock_Esp  = round(c(fevd_ord2$esportazioni[1, "esportazioni"], fevd_ord2$esportazioni[8, "esportazioni"],
+                       fevd_ord2$vendite[1, "esportazioni"], fevd_ord2$vendite[8, "esportazioni"],
+                       fevd_ord2$prod_industriale[1, "esportazioni"], fevd_ord2$prod_industriale[8, "esportazioni"]) * 100, 2),
+  Shock_Ven  = round(c(fevd_ord2$esportazioni[1, "vendite"], fevd_ord2$esportazioni[8, "vendite"],
+                       fevd_ord2$vendite[1, "vendite"], fevd_ord2$vendite[8, "vendite"],
+                       fevd_ord2$prod_industriale[1, "vendite"], fevd_ord2$prod_industriale[8, "vendite"]) * 100, 2),
+  Shock_Prod = round(c(fevd_ord2$esportazioni[1, "prod_industriale"], fevd_ord2$esportazioni[8, "prod_industriale"],
+                       fevd_ord2$vendite[1, "prod_industriale"], fevd_ord2$vendite[8, "prod_industriale"],
+                       fevd_ord2$prod_industriale[1, "prod_industriale"], fevd_ord2$prod_industriale[8, "prod_industriale"]) * 100, 2)
+)
+
+colnames(tab_fevd2) <- c("Variabile", "Orizzonte", "Shock Esp. (\\%)", "Shock Ven. (\\%)", "Shock Prod. (\\%)")
+
+kable(tab_fevd2, caption = "Ordinamento 2, Decomposizione dopo 1 e 8 trimestri", 
+      booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+Il confronto tra i due ordinamenti rivela che l'inversione delle relazioni causali modifica soprattutto l'impatto simultaneo a $t=0$, lasciando pressoché inalterate le dinamiche ritardate ($h \ge 1$):
+
+1.  **Esportazioni** $\rightarrow$ **Produzione Industriale**: Mentre nell'Ordinamento 1 (Esportazioni come $1^a$) la reazione della produzione è immediata con un picco massimo al tempo zero ($h=0$, $+0.95\%$), rimanendo elevata a $h=1$ ($+0.88\%$), nell'Ordinamento 2 (Esportazioni come $3^a$), la risposta a $h=0$ è vincolata a zero per costruzione triangolare; la reazione diventa positiva dal $1^\circ$ trimestre ($h=1$), dove tocca il suo nuovo picco ($+0.38\%$). In entrambi i modelli, l'impatto si riassorbe completamente entro 4 trimestri (1 anno).
+2.  **Vendite al dettaglio** $\rightarrow$ **Produzione Industriale**: Questa risposta mostra un'elevata stabilità. In entrambi gli ordinamenti, la reazione immediata a $h=0$ è trascurabile, mentre si registra il medesimo picco positivo al $2^\circ$ trimestre ($h=2$, $+0.35\%$ nell'Ordinamento 1 e $+0.38\%$ nell'Ordinamento 2). Questo ritardo di circa 6 mesi rispecchia i tempi tecnici che necessitano le imprese produttive per riprendersi dagli shock delle vendite.
+3.  **Produzione Industriale** $\rightarrow$ **Vendite al dettaglio**: La dinamica nei due casi risulta del tutto sovrapponibile. Dopo una risposta iniziale nulla o vicina allo zero a $h=0$, il picco massimo viene raggiunto al $1^\circ$ trimestre in entrambi gli schemi ($h=1$, $+0.27\%$ nell'Ordine 1 e $+0.25\%$ nell'Ordine 2), evidenziando l'effetto indiretto del reddito e dell'occupazione industriale sui consumi delle famiglie.
+
+Confrontando le FEVD dei due ordinamenti è possibile osservare quanto la ripartizione della varianza degli errori di previsione dipenda dall'ordinamento scelto:
+
+- **Esportazioni**: Al $1^\circ$ trimestre ($h=1$), la quota di varianza spiegata da shock propri scende dal $100\%$ (Ordinamento 1) al $61.15\%$ (Ordinamento 2), poiché la Produzione Industriale (posta in $1^a$ posizione) assorbe subito il $36.37\%$ della variabilità. A 8 trimestri ($h=8$), la quota propria delle Esportazioni si riduce al $47.61\%$, mentre il contributo della Produzione sale al $49.19\%$.
+- **Produzione industriale**: Quando collocata in $1^a$ posizione (Ordinamento 2), la Produzione spiega il $100\%$ della propria varianza a $h=1$ e mantiene il $92.19\%$ a $h=8$. Nell'Ordinamento 1, invece, le Esportazioni ne spiegavano il $36.37\%$ a $h=1$ e il $43.63\%$ a $h=8$, a dimostrazione che la scomposizione a breve termine risente fortemente della variabile scelta come leader.
+- **Vendite al dettaglio**: Presentano un'autonomia pressoché totale in entrambi gli schemi. La quota di varianza spiegata da shock propri rimane superiore al $90\%$ sia a $h=1$ ($97.42\%$ nell'Ordine 1 vs $100\%$ nell'Ordine 2) sia ad $h=8$ ($90.30\%$ vs $92.30\%$), a conferma che la domanda interna risponde a dinamiche proprie ampiamente indipendenti dalle fluttuazioni contemporanee delle altre variabili.
+
+In sintesi, la sensibilità osservata a tempo zero ($h=0$) deriva direttamente dall'elevata correlazione contemporanea tra i residui del VAR ridotto ($\rho = 0.603$). Poiché Cholesky attribuisce arbitrariamente tutta la covarianza alla prima variabile dell'ordinamento, i valori a $h=0$ variano a seconda dello schema scelto. Inoltre, il fatto che le traiettorie rimangano sostanzialmente invariate per $h \geq 1$ indica che le relazioni tra le variabili nei trimestri successivi (l'effetto ritardato di due trimestri della produzione sulle vendite e l'effetto delle esportazioni) sono abbastanza stabili e non dipendono molto dall'ordinamento scelto.
+
+### Conclusione economica e limiti dell'analisi
+
+L'analisi empirica delle IRF e della FEVD suggerisce che la crescita delle Esportazioni funga da principale propulsore per l'economia italiana, trascinando con decisione sia la Produzione Industriale sia le Vendite al dettaglio. La produzione risponde con un ritardo di 1-2 trimestri agli ordini di riassortimento commerciale interni ed esteri. L'inversione dell'ordinamento di Cholesky modifica l'impatto simultaneo a $h=0$, ma conferma la robustezza delle risposte dinamiche differite nel medio periodo ($h \ge 1$), con shock che si esauriscono entro 1 anno.
+
+Si segnalano comunque alcuni limiti:
+
+1.  **Arbitrarietà dell'ordinamento di Cholesky**: L'ortogonalizzazione ricorsiva si basa su vincoli triangolari a tempo zero che dipendono dall'ordinamento scelto in modo empirico.
+2.  **Specificazione sulle differenze (Breve periodo)**: Con i dati disponibili il modello VAR descrive unicamente i tassi di crescita trimestrali, trascurando eventuali relazioni di equilibrio di lungo periodo nei livelli.
+3.  **Volatilità e non-normalità dei residui**: Come evidenziato dai test diagnostici del Laboratorio 2 (presenza di effetti ARCH ed eccesso di curtosi), la varianza residua non è costante nel tempo, quindi è necessaria cautela nell'interpretazione puntuale dell'ampiezza delle bande bootstrap.
+
+------------------------------------------------------------------------
+
+*Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nelle interpretazioni econometriche. La scelta dei metodi statistici, l’analisi dei dati e le interpretazioni di grafici e modelli restano prevalentemente a cura degli autori.*

@@ -1,0 +1,295 @@
+---
+title: "Laboratorio 4"
+subtitle: "Progetto B (Italia): Produzione industriale, Vendite al dettaglio ed Esportazioni reali"
+author: "I PILastri: Bigon Marco, Fabris Luca, Pivato Loris, Romanato Gaia"
+output: pdf_document
+header-includes:
+  - \usepackage[italian]{babel}
+  - \usepackage{titling}
+  - \setlength{\droptitle}{-2cm}
+  - \pretitle{\vspace{-1cm}\begin{center}\LARGE}
+  - \posttitle{\end{center}\vspace{-0.4cm}}
+  - \preauthor{\begin{center}\large}
+  - \postauthor{\end{center}\vspace{-1.7cm}}
+  - \geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.pos = "H")
+```
+
+```{r include=FALSE}
+library(readr)
+library(tidyverse)
+library(vars)
+library(lmtest)
+library(forecast)
+library(kableExtra)
+
+# Importazione dati e preparazione dataset (stesso setup dei Laboratori 1, 2 e 3)
+data <- read.csv("../Dati/dataset.csv", row.names = 1)
+data_ts <- ts(data[, c("esportazioni", "vendite", "prod_industriale")],
+              start = c(1990, 1), frequency = 4)
+
+data_log  <- log(data_ts)
+data_diff <- diff(data_log)
+
+# Training set: 1990 Q2 - 2016 Q4 (107 osservazioni nelle differenze)
+train_diff <- window(data_diff, start = c(1990, 2), end = c(2016, 4))
+test_diff  <- window(data_diff, start = c(2017, 1))
+
+# Modello VAR(2) sulle differenze logaritmiche stimato nei Laboratori precedenti
+var_fit <- VAR(train_diff, p = 2, type = "const")
+```
+
+## 1. Modelli e campioni
+
+In continuità con i laboratori precedenti, si valuta la capacità previsiva out-of-sample del modello multivariato **VAR(2)** confrontandola con quella di modelli benchmark univariati **ARIMA**. L'analisi è condotta sul sistema economico italiano composto da **Esportazioni reali**, **Vendite al dettaglio** e **Produzione Industriale**.
+
+Il campione totale (1990 Q1 – 2023 Q3) è suddiviso in due sotto-campioni consecutivi:
+* **Training set**: dal primo trimestre 1990 al quarto trimestre 2016 (108 osservazioni nei livelli, pari a 107 tassi di crescita trimestrali nelle differenze logaritmiche), utilizzato per la specificazione e stima dei modelli;
+* **Test set**: dal primo trimestre 2017 al terzo trimestre 2023 (27 osservazioni), riservato esclusivamente alla valutazione delle previsioni.
+
+Sui tassi di crescita del training set si identificano i modelli benchmark univariati ARIMA tramite la procedura automatica `auto.arima()` del pacchetto `forecast`, imponendo $d=0$ e assenza di componenti stagionali (in quanto le serie sono già destagionalizzate e differenziate).
+
+```{r echo=FALSE}
+# Stima modelli ARIMA per ciascuna serie sul training set
+mod_esp  <- auto.arima(train_diff[, "esportazioni"], d = 0, D = 0, seasonal = FALSE)
+mod_ven  <- auto.arima(train_diff[, "vendite"], d = 0, D = 0, seasonal = FALSE)
+mod_prod <- auto.arima(train_diff[, "prod_industriale"], d = 0, D = 0, seasonal = FALSE)
+
+ordini_arima <- rbind(
+  arimaorder(mod_esp),
+  arimaorder(mod_ven),
+  arimaorder(mod_prod)
+)
+rownames(ordini_arima) <- c("Esportazioni", "Vendite al dettaglio", "Produzione industriale")
+
+has_mean <- c(
+  "intercept" %in% names(coef(mod_esp)),
+  "intercept" %in% names(coef(mod_ven)),
+  "intercept" %in% names(coef(mod_prod))
+)
+
+tab_models <- data.frame(
+  Variabile = rownames(ordini_arima),
+  ARIMA_Order = paste0("ARIMA(", ordini_arima[, 1], ",", ordini_arima[, 2], ",", ordini_arima[, 3], ")"),
+  Costante = ifelse(has_mean, "Sì (Media non nulla)", "No"),
+  AICc = c(round(mod_esp$aicc, 2), round(mod_ven$aicc, 2), round(mod_prod$aicc, 2))
+)
+
+colnames(tab_models) <- c("Variabile", "Modello Benchmark ARIMA", "Costante / Media", "AICc")
+
+kable(tab_models, caption = "Modelli ARIMA univariati selezionati sul training set", 
+      booktabs = TRUE, format = "latex", linesep = "") %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+Come mostrato in Tabella 1, la procedura seleziona un modello **ARIMA(1,0,0)** con costante per le Esportazioni, un **ARIMA(0,0,1)** con costante per le Vendite al dettaglio e un **ARIMA(1,0,0)** con costante per la Produzione Industriale.
+
+---
+
+## 2. Previsioni da origini successive (Campione Crescente)
+
+Per valutare la stabilità delle prestazioni previsive nel tempo, si adotta uno schema a **origini mobili con campione crescente** (*expanding window*). 
+
+Si fissa un orizzonte massimo di previsione pari a $H = 8$ trimestri (2 anni) e si considerano tutte le origini previsive $T$ comprese tra il quarto trimestre 2016 (fine del training set) e il terzo trimestre 2021. Questa scelta garantisce che per ciascuna origine siano interamente osservabili le 8 realizzazioni future nel test set fino al 2023 Q3, ottenendo un totale di **20 origini previsive valutate**.
+
+Ad ogni origine $T$, i parametri del VAR(2) e dei tre modelli ARIMA vengono ristimati utilizzando esclusivamente le osservazioni disponibili fino a quel trimestre, mantenendo fissi gli ordini identificati sul training set ($p=2$ per il VAR e gli ordini univariati riportati in Tabella 1).
+
+```{r echo=FALSE}
+# Parametri del ciclo di previsione
+H <- 8
+n_train_diff <- nrow(train_diff) # 107
+n_total_diff <- nrow(data_diff)  # 134
+
+# Origini previsive (indici nel dataframe data_diff)
+# Dalla fine del training set (107) fino a (134 - 8 = 126, ovvero 2021 Q3)
+origini <- n_train_diff:(n_total_diff - H)
+n_origini <- length(origini) # 20 origini
+
+# Array per memorizzare errori e previsioni
+# Dimensioni: [origini (20), orizzonti (8), variabili (3)]
+errori_VAR   <- array(NA, dim = c(n_origini, H, 3), dimnames = list(NULL, paste0("h", 1:H), colnames(data_diff)))
+errori_ARIMA <- array(NA, dim = c(n_origini, H, 3), dimnames = list(NULL, paste0("h", 1:H), colnames(data_diff)))
+
+previsioni_VAR   <- array(NA, dim = c(n_origini, H, 3), dimnames = list(NULL, paste0("h", 1:H), colnames(data_diff)))
+previsioni_ARIMA <- array(NA, dim = c(n_origini, H, 3), dimnames = list(NULL, paste0("h", 1:H), colnames(data_diff)))
+
+ordini_mat <- ordini_arima
+con_media  <- has_mean
+
+# Ciclo di previsione rolling/expanding origin
+for (r in 1:n_origini) {
+  t_idx <- origini[r]
+  dati_stima <- data_diff[1:t_idx, ]
+  
+  # 1. Ristima VAR(2) sui dati disponibili
+  mod_var_curr <- VAR(dati_stima, p = 2, type = "const")
+  prev_var_curr <- predict(mod_var_curr, n.ahead = H)
+  
+  for (j in 1:3) {
+    nome_var <- colnames(data_diff)[j]
+    crescita_var <- prev_var_curr$fcst[[nome_var]][, "fcst"]
+    
+    # 2. Ristima ARIMA con ordini fissi sui dati disponibili
+    mod_arima_curr <- Arima(dati_stima[, j], order = ordini_mat[j, ], include.mean = con_media[j])
+    crescita_arima <- as.numeric(forecast(mod_arima_curr, h = H)$mean)
+    
+    # Ultimo log-livello osservato all'origine T
+    # t_idx nelle differenze corrisponde al livello riga t_idx + 1
+    base_log <- data_log[t_idx + 1, j]
+    
+    # Ricostruzione dei log-livelli cumulando le crescite previste
+    previsioni_VAR[r, , j]   <- base_log + cumsum(crescita_var)
+    previsioni_ARIMA[r, , j] <- base_log + cumsum(crescita_arima)
+    
+    # Log-livelli effettivi osservati nei passi futuri T+1 ... T+H
+    osservati_log <- data_log[(t_idx + 2):(t_idx + H + 1), j]
+    
+    # Errori di previsione sui log-livelli (Osservato - Previsto)
+    errori_VAR[r, , j]   <- osservati_log - previsioni_VAR[r, , j]
+    errori_ARIMA[r, , j] <- osservati_log - previsioni_ARIMA[r, , j]
+  }
+}
+```
+
+---
+
+## 3. Scala del confronto e ricostruzione dei log-livelli
+
+Poiché i modelli sono stimati sui tassi di crescita trimestrali (differenze logaritmiche $\Delta x_t$), le previsioni dirette rappresentano le variazioni percentuali attese. Per effettuare un confronto omogeneo tra i modelli e rispetto ai dati effettivi, le previsioni vengono ricondotte alla scala dei **log-livelli** $x_t = \log(y_t)$.
+
+Per ciascuna origine $T$ e orizzonte $h = 1, \dots, 8$, il log-livello previsto è ricostruito sommando all'ultimo livello logaritmico osservato $x_T$ le differenze logaritmiche previste nei periodi intermedi:
+$$\hat{x}_{T+h|T} = x_T + \sum_{j=1}^h \Delta \hat{x}_{T+j|T}$$
+
+In questo modo, gli errori di previsione $e_T(h) = x_{T+h} - \hat{x}_{T+h|T}$ sono calcolati sui log-livelli senza applicare la trasformazione esponenziale, garantendo la piena comparabilità delle metriche d'accuratezza.
+
+---
+
+## 4. Accuratezza (RMSE) e Test di Diebold-Mariano
+
+L'accuratezza previsiva è valutata mediante la radice dell'errore quadratico medio (**RMSE**), calcolata per ciascuna variabile $j$ e orizzonte $h \in \{1, 4, 8\}$ sui 20 errori ottenuti dalle origini mobili:
+$$\text{RMSE}_{j, h} = \sqrt{\frac{1}{N} \sum_{r=1}^N \left( x_{r+h, j} - \hat{x}_{r+h|r, j} \right)^2}$$
+
+Si calcola inoltre il rapporto $\text{Rapporto} = \frac{\text{RMSE}_{\text{VAR}}}{\text{RMSE}_{\text{ARIMA}}}$: un valore inferiore all'unità indica un vantaggio del modello multivariato VAR rispetto al benchmark univariato ARIMA.
+
+Per verificare se le differenze d'accuratezza siano statisticamente significative, si applica il **test di Diebold-Mariano** (`dm.test` del pacchetto `forecast`), specificando funzione di perdita quadratica (`power = 2`), orizzonte $h$ corrispondente e stimatore della varianza di lungo periodo basato sul kernel di Bartlett (`varestimator = "bartlett"`). L'ipotesi nulla $H_0$ stabilisce l'uguaglianza della perdita quadratica attesa tra i due modelli.
+
+```{r echo=FALSE}
+orizzonti <- c(1, 4, 8)
+n_vars <- 3
+var_names <- colnames(data_diff)
+var_labels <- c("Esportazioni", "Vendite al dettaglio", "Produzione industriale")
+
+# Calcolo RMSE
+rmse_var   <- matrix(NA, nrow = H, ncol = n_vars, dimnames = list(paste0("h", 1:H), var_names))
+rmse_arima <- matrix(NA, nrow = H, ncol = n_vars, dimnames = list(paste0("h", 1:H), var_names))
+
+for (j in 1:n_vars) {
+  rmse_var[, j]   <- sqrt(colMeans(errori_VAR[, , j]^2))
+  rmse_arima[, j] <- sqrt(colMeans(errori_ARIMA[, , j]^2))
+}
+
+rapporti_rmse <- rmse_var / rmse_arima
+
+# Calcolo Test Diebold-Mariano per h = 1, 4, 8
+dm_stat <- matrix(NA, nrow = 3, ncol = n_vars, dimnames = list(paste0("h", orizzonti), var_names))
+dm_pval <- matrix(NA, nrow = 3, ncol = n_vars, dimnames = list(paste0("h", orizzonti), var_names))
+
+for (j in 1:n_vars) {
+  for (k in 1:3) {
+    h_val <- orizzonti[k]
+    test_dm <- dm.test(errori_VAR[, h_val, j], errori_ARIMA[, h_val, j],
+                       h = h_val, power = 2, alternative = "two.sided",
+                       varestimator = "bartlett")
+    dm_stat[k, j] <- test_dm$statistic
+    dm_pval[k, j] <- test_dm$p.value
+  }
+}
+
+# Costruzione tabella riassuntiva unica per tutte e tre le variabili
+tab_mega <- do.call(rbind, lapply(1:n_vars, function(j) {
+  data.frame(
+    Variabile = c(var_labels[j], "", ""),
+    Orizzonte = paste(orizzonti, ifelse(orizzonti == 1, "trimestre", "trimestri")),
+    N_Errori = rep(n_origini, 3),
+    RMSE_VAR = sprintf("%.4f", rmse_var[orizzonti, j]),
+    RMSE_ARIMA = sprintf("%.4f", rmse_arima[orizzonti, j]),
+    Rapporto = sprintf("%.4f", rapporti_rmse[orizzonti, j]),
+    Stat_DM = sprintf("%.3f", dm_stat[, j]),
+    p_value = sprintf("%.4f", dm_pval[, j]),
+    Decisione = ifelse(dm_pval[, j] < 0.05, "Rigetto \\(H_0\\) (*)", "Non rigetto")
+  )
+}))
+
+colnames(tab_mega) <- c("Variabile", "Orizzonte", "N. Errori", "RMSE VAR", "RMSE ARIMA", 
+                        "Rapporto (VAR/ARIMA)", "Stat. DM", "p-value", "Decisione (\\(\\alpha=0.05\\))")
+
+kable(tab_mega, 
+      caption = "Valutazione comparativa delle previsioni sui log-livelli (VAR vs ARIMA)", 
+      booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
+  kable_styling(latex_options = c("hold_position", "scale_down"))
+```
+
+---
+
+## 5. Grafici e conclusioni economiche
+
+### 5.1 Rappresentazione grafica dei log-livelli previsti e degli RMSE
+
+Si riporta di seguito il confronto grafico tra le traiettorie dei log-livelli effettivi osservati e le previsioni generate dal VAR(2) e dai modelli ARIMA a partire dalla prima origine del test set (2016 Q4), unitamente all'andamento dell'RMSE per tutti gli orizzonti $h = 1, \dots, 8$.
+
+```{r fig.align="center", fig.height=4.5, echo=FALSE}
+# Grafico multi-panel: Previsioni da prima origine e profilo RMSE
+par(mfrow = c(3, 2), mar = c(3.5, 3.5, 2, 1), mgp = c(2, 0.7, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
+
+# Previsioni da prima origine (2016 Q4, r = 1)
+r_first <- 1 
+t_first_idx <- origini[r_first]
+obs_first <- data_log[(t_first_idx + 2):(t_first_idx + H + 1), ]
+
+for (j in 1:n_vars) {
+  # Pannello Sinistro: Traiettorie log-livelli
+  matplot(1:H, cbind(obs_first[, j], previsioni_VAR[r_first, , j], previsioni_ARIMA[r_first, , j]),
+          type = "b", pch = c(16, 1, 2), lty = 1:3, col = c("black", "#2878B5", "#D73027"),
+          xlab = "Orizzonte (Trimestri)", ylab = "Log-livello",
+          main = paste(var_labels[j], "- Previsioni da 2016 Q4"))
+  legend("topleft", c("Osservato", "VAR(2)", "ARIMA"), col = c("black", "#2878B5", "#D73027"),
+         lty = 1:3, pch = c(16, 1, 2), bty = "n", cex = 0.75)
+  
+  # Pannello Destro: Evoluzione RMSE per orizzonte
+  matplot(1:H, cbind(rmse_var[, j], rmse_arima[, j]),
+          type = "b", pch = c(16, 2), lty = 1:2, col = c("#2878B5", "#D73027"),
+          xlab = "Orizzonte (Trimestri)", ylab = "RMSE sui log-livelli",
+          main = paste(var_labels[j], "- Profilo RMSE"))
+  legend("topleft", c("VAR(2)", "ARIMA"), col = c("#2878B5", "#D73027"),
+         lty = 1:2, pch = c(16, 2), bty = "n", cex = 0.75)
+}
+
+par(mfrow = c(1, 1))
+```
+
+### 5.2 Discussione congiunta dei risultati ed evidenze econometriche
+
+L'analisi integrata dei rapporti RMSE e dei test di Diebold-Mariano evidenzia i seguenti aspetti principali:
+
+1. **Prevalenza dei modelli univariati ARIMA**: Per tutte e tre le variabili e a quasi tutti gli orizzonti temporali ($h = 1, 4, 8$), il rapporto $\text{RMSE}_{\text{VAR}} / \text{RMSE}_{\text{ARIMA}}$ risulta superiore all'unità (attestandosi attorno a $1.16 - 1.51$ per le Esportazioni, $1.27 - 1.47$ per le Vendite e $1.21 - 1.44$ per la Produzione Industriale). Ciò dimostra che il modello multivariato VAR(2) non offre un incremento di accuratezza puntuale rispetto ai più parsimoniosi modelli benchmark ARIMA.
+2. **Significatività dei test di Diebold-Mariano**: Nonostante i valori di RMSE siano sistematicamente inferiori per i modelli ARIMA, i p-value del test di Diebold-Mariano non consentono di rigettare l'ipotesi nulla di pari accuratezza quadratica attesa ad una soglia del $5\%$. Ciò indica che, data la variabilità degli errori nel test set, la differenza di accuratezza osservata tra VAR e ARIMA non è statisticamente significativa.
+3. **Impatto delle anomalie e del periodo di valutazione**: Il periodo di test comprende la grave shock economico-sanitario da COVID-19 del 2020. Le oscillazioni estreme registrate durante la pandemia hanno generato errori di previsione elevati in tutti i modelli; tuttavia, la maggiore ricchezza parametrica del VAR(2) ne ha incrementato la varianza campionaria, penalizzandone la capacità di estrapolazione rispetto alla semplicità dei modelli univariati.
+
+### 5.3 Conservazione dei risultati per il Laboratorio 6
+
+In conformità con le istruzioni del corso, tutti gli oggetti e i risultati del protocollo di previsione vengono salvati nel file workspace `risultati_previsioni.RData` per consentire il successivo confronto con il modello VECM nel Laboratorio 6.
+
+```{r}
+# Salvataggio dei risultati per il Laboratorio 6
+save(var_fit, ordini_arima, has_mean, H, origini, n_origini,
+     previsioni_VAR, previsioni_ARIMA, errori_VAR, errori_ARIMA,
+     rmse_var, rmse_arima, rapporti_rmse, dm_stat, dm_pval,
+     file = "risultati_previsioni.RData")
+```
+
+---
+
+*Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nella sintesi delle interpretazioni econometriche.*
