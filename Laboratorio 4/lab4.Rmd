@@ -209,7 +209,6 @@ tab_mega <- do.call(rbind, lapply(1:n_vars, function(j) {
   data.frame(
     Variabile = c(var_labels[j], "", ""),
     Orizzonte = paste(orizzonti, ifelse(orizzonti == 1, "trimestre", "trimestri")),
-    N_Errori = rep(n_origini, 3),
     RMSE_VAR = sprintf("%.4f", rmse_var[orizzonti, j]),
     RMSE_ARIMA = sprintf("%.4f", rmse_arima[orizzonti, j]),
     Rapporto = sprintf("%.4f", rapporti_rmse[orizzonti, j]),
@@ -219,12 +218,14 @@ tab_mega <- do.call(rbind, lapply(1:n_vars, function(j) {
   )
 }))
 
-colnames(tab_mega) <- c("Variabile", "Orizzonte", "N. Errori", "RMSE VAR", "RMSE ARIMA", 
-                        "Rapporto (VAR/ARIMA)", "Stat. DM", "p-value", "Decisione (\\(\\alpha=0.05\\))")
+colnames(tab_mega) <- c("Variabile", "Orizzonte", "RMSE VAR", "RMSE ARIMA", 
+                        "Rapporto $(\\frac{\\text{VAR}}{\\text{ARIMA}})$", "Stat. DM", "p-value", "Decisione (\\(\\alpha=0.05\\))")
 
+rownames(tab_mega) <- NULL
 kable(tab_mega, 
       caption = "Valutazione comparativa delle previsioni sui log-livelli (VAR vs ARIMA)", 
       booktabs = TRUE, format = "latex", escape = FALSE, linesep = "") %>%
+  row_spec(c(3, 6), extra_latex_after = "\\addlinespace[6pt]") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
