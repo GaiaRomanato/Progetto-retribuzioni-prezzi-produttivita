@@ -46,9 +46,7 @@ var_fit <- VAR(train_diff, p = 2, type = "const")
 
 In continuità con i laboratori precedenti, si valuta la capacità previsiva out-of-sample del modello multivariato **VAR(2)** confrontandola con quella di modelli benchmark univariati **ARIMA**. L'analisi è condotta sul sistema economico italiano composto da **Esportazioni reali**, **Vendite al dettaglio** e **Produzione Industriale**.
 
-Il campione totale (1990 Q1 – 2023 Q3) è suddiviso in due sotto-campioni consecutivi:
-* **Training set**: dal primo trimestre 1990 al quarto trimestre 2016 (108 osservazioni nei livelli, pari a 107 tassi di crescita trimestrali nelle differenze logaritmiche), utilizzato per la specificazione e stima dei modelli;
-* **Test set**: dal primo trimestre 2017 al terzo trimestre 2023 (27 osservazioni), riservato esclusivamente alla valutazione delle previsioni.
+Il campione totale (1990 Q1 – 2023 Q3) è suddiviso in due sotto-campioni consecutivi: \* **Training set**: dal primo trimestre 1990 al quarto trimestre 2016 (108 osservazioni nei livelli, pari a 107 tassi di crescita trimestrali nelle differenze logaritmiche), utilizzato per la specificazione e stima dei modelli; \* **Test set**: dal primo trimestre 2017 al terzo trimestre 2023 (27 osservazioni), riservato esclusivamente alla valutazione delle previsioni.
 
 Sui tassi di crescita del training set si identificano i modelli benchmark univariati ARIMA tramite la procedura automatica `auto.arima()` del pacchetto `forecast`, imponendo $d=0$ e assenza di componenti stagionali (in quanto le serie sono già destagionalizzate e differenziate).
 
@@ -87,11 +85,11 @@ kable(tab_models, caption = "Modelli ARIMA univariati selezionati sul training s
 
 Come mostrato in Tabella 1, la procedura seleziona un modello **ARIMA(1,0,0)** con costante per le Esportazioni, un **ARIMA(0,0,1)** con costante per le Vendite al dettaglio e un **ARIMA(1,0,0)** con costante per la Produzione Industriale.
 
----
+------------------------------------------------------------------------
 
 ## 2. Previsioni da origini successive (Campione Crescente)
 
-Per valutare la stabilità delle prestazioni previsive nel tempo, si adotta uno schema a **origini mobili con campione crescente** (*expanding window*). 
+Per valutare la stabilità delle prestazioni previsive nel tempo, si adotta uno schema a **origini mobili con campione crescente** (*expanding window*).
 
 Si fissa un orizzonte massimo di previsione pari a $H = 8$ trimestri (2 anni) e si considerano tutte le origini previsive $T$ comprese tra il quarto trimestre 2016 (fine del training set) e il terzo trimestre 2021. Questa scelta garantisce che per ciascuna origine siano interamente osservabili le 8 realizzazioni future nel test set fino al 2023 Q3, ottenendo un totale di **20 origini previsive valutate**.
 
@@ -154,23 +152,21 @@ for (r in 1:n_origini) {
 }
 ```
 
----
+------------------------------------------------------------------------
 
 ## 3. Scala del confronto e ricostruzione dei log-livelli
 
 Poiché i modelli sono stimati sui tassi di crescita trimestrali (differenze logaritmiche $\Delta x_t$), le previsioni dirette rappresentano le variazioni percentuali attese. Per effettuare un confronto omogeneo tra i modelli e rispetto ai dati effettivi, le previsioni vengono ricondotte alla scala dei **log-livelli** $x_t = \log(y_t)$.
 
-Per ciascuna origine $T$ e orizzonte $h = 1, \dots, 8$, il log-livello previsto è ricostruito sommando all'ultimo livello logaritmico osservato $x_T$ le differenze logaritmiche previste nei periodi intermedi:
-$$\hat{x}_{T+h|T} = x_T + \sum_{j=1}^h \Delta \hat{x}_{T+j|T}$$
+Per ciascuna origine $T$ e orizzonte $h = 1, \dots, 8$, il log-livello previsto è ricostruito sommando all'ultimo livello logaritmico osservato $x_T$ le differenze logaritmiche previste nei periodi intermedi: $$\hat{x}_{T+h|T} = x_T + \sum_{j=1}^h \Delta \hat{x}_{T+j|T}$$
 
 In questo modo, gli errori di previsione $e_T(h) = x_{T+h} - \hat{x}_{T+h|T}$ sono calcolati sui log-livelli senza applicare la trasformazione esponenziale, garantendo la piena comparabilità delle metriche d'accuratezza.
 
----
+------------------------------------------------------------------------
 
 ## 4. Accuratezza (RMSE) e Test di Diebold-Mariano
 
-L'accuratezza previsiva è valutata mediante la radice dell'errore quadratico medio (**RMSE**), calcolata per ciascuna variabile $j$ e orizzonte $h \in \{1, 4, 8\}$ sui 20 errori ottenuti dalle origini mobili:
-$$\text{RMSE}_{j, h} = \sqrt{\frac{1}{N} \sum_{r=1}^N \left( x_{r+h, j} - \hat{x}_{r+h|r, j} \right)^2}$$
+L'accuratezza previsiva è valutata mediante la radice dell'errore quadratico medio (**RMSE**), calcolata per ciascuna variabile $j$ e orizzonte $h \in \{1, 4, 8\}$ sui 20 errori ottenuti dalle origini mobili: $$\text{RMSE}_{j, h} = \sqrt{\frac{1}{N} \sum_{r=1}^N \left( x_{r+h, j} - \hat{x}_{r+h|r, j} \right)^2}$$
 
 Si calcola inoltre il rapporto $\text{Rapporto} = \frac{\text{RMSE}_{\text{VAR}}}{\text{RMSE}_{\text{ARIMA}}}$: un valore inferiore all'unità indica un vantaggio del modello multivariato VAR rispetto al benchmark univariato ARIMA.
 
@@ -232,7 +228,7 @@ kable(tab_mega,
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
----
+------------------------------------------------------------------------
 
 ## 5. Grafici e conclusioni economiche
 
@@ -240,43 +236,81 @@ kable(tab_mega,
 
 Si riporta di seguito il confronto grafico tra le traiettorie dei log-livelli effettivi osservati e le previsioni generate dal VAR(2) e dai modelli ARIMA a partire dalla prima origine del test set (2016 Q4), unitamente all'andamento dell'RMSE per tutti gli orizzonti $h = 1, \dots, 8$.
 
-```{r fig.align="center", fig.height=4.5, echo=FALSE}
-# Grafico multi-panel: Previsioni da prima origine e profilo RMSE
-par(mfrow = c(3, 2), mar = c(3.5, 3.5, 2, 1), mgp = c(2, 0.7, 0), cex.main = 0.85, cex.lab = 0.75, cex.axis = 0.7)
+```{r fig.align="center", fig.width=7, fig.height=2.2, out.width="100%", echo=FALSE}
+par(mfrow = c(1, 3), mar = c(3.5, 3.5, 2, 0.8), mgp = c(2, 0.7, 0), cex.main = 0.8, cex.lab = 0.7, cex.axis = 0.65)
 
-# Previsioni da prima origine (2016 Q4, r = 1)
 r_first <- 1 
 t_first_idx <- origini[r_first]
 obs_first <- data_log[(t_first_idx + 2):(t_first_idx + H + 1), ]
 
+col_var   <- "#2878B5"
+col_arima <- "#D73027"
+
 for (j in 1:n_vars) {
-  # Pannello Sinistro: Traiettorie log-livelli
   matplot(1:H, cbind(obs_first[, j], previsioni_VAR[r_first, , j], previsioni_ARIMA[r_first, , j]),
-          type = "b", pch = c(16, 1, 2), lty = 1:3, col = c("black", "#2878B5", "#D73027"),
+          type = "b", pch = c(16, 1, 2), lty = 1:3, col = c("black", col_var, col_arima),
           xlab = "Orizzonte (Trimestri)", ylab = "Log-livello",
           main = paste(var_labels[j], "- Previsioni da 2016 Q4"))
-  legend("topleft", c("Osservato", "VAR(2)", "ARIMA"), col = c("black", "#2878B5", "#D73027"),
-         lty = 1:3, pch = c(16, 1, 2), bty = "n", cex = 0.75)
-  
-  # Pannello Destro: Evoluzione RMSE per orizzonte
-  matplot(1:H, cbind(rmse_var[, j], rmse_arima[, j]),
-          type = "b", pch = c(16, 2), lty = 1:2, col = c("#2878B5", "#D73027"),
-          xlab = "Orizzonte (Trimestri)", ylab = "RMSE sui log-livelli",
-          main = paste(var_labels[j], "- Profilo RMSE"))
-  legend("topleft", c("VAR(2)", "ARIMA"), col = c("#2878B5", "#D73027"),
-         lty = 1:2, pch = c(16, 2), bty = "n", cex = 0.75)
+  if(j == 2) legend("bottomleft", c("Osservato", "VAR(2)", "ARIMA"), col = c("black", col_var, col_arima),
+         lty = 1:3, pch = c(16, 1, 2), bty = "n", cex = 0.6)
+    else legend("topleft", c("Osservato", "VAR(2)", "ARIMA"), col = c("black", col_var, col_arima),
+         lty = 1:3, pch = c(16, 1, 2), bty = "n", cex = 0.6)
+}
+```
+
+```{r fig.align="center", fig.width=7, fig.height=2.2, out.width="100%", echo=FALSE}
+# IC al 95% per l'RMSE (metodo delta + varianza HAC con kernel di Bartlett, lag h-1)
+rmse_ci <- function(e, alpha = 0.05) {
+  H <- ncol(e); n <- nrow(e)
+  out <- matrix(NA, H, 2)
+  for (h in 1:H) {
+    d   <- e[, h]^2
+    mse <- mean(d)
+    dc  <- d - mse
+    lrv <- sum(dc^2) / n
+    if (h > 1) for (k in 1:(h - 1)) {
+      lrv <- lrv + 2 * (1 - k / h) * sum(dc[(k + 1):n] * dc[1:(n - k)]) / n
+    }
+    se_rmse <- sqrt(max(lrv, 0) / n) / (2 * sqrt(mse))
+    out[h, ] <- sqrt(mse) + c(-1, 1) * qt(1 - alpha / 2, n - 1) * se_rmse
+  }
+  out[, 1] <- pmax(out[, 1], 0)
+  out
 }
 
-par(mfrow = c(1, 1))
+par(mfrow = c(1, 3), mar = c(3.5, 3.5, 2, 0.8), mgp = c(2, 0.7, 0), cex.main = 0.8, cex.lab = 0.7, cex.axis = 0.65)
+
+col_var   <- "#2878B5"
+col_arima <- "#D73027"
+
+for (j in 1:n_vars) {
+  ci_var   <- rmse_ci(errori_VAR[, , j])
+  ci_arima <- rmse_ci(errori_ARIMA[, , j])
+  ylim <- range(ci_var, ci_arima, na.rm = TRUE)
+  
+  plot(1:H, rmse_var[, j], type = "n", ylim = ylim,
+       xlab = "Orizzonte (Trimestri)", ylab = "RMSE sui log-livelli",
+       main = paste(var_labels[j], "- Profilo RMSE"))
+  polygon(c(1:H, H:1), c(ci_var[, 1], rev(ci_var[, 2])),
+          col = adjustcolor(col_var, alpha.f = 0.20), border = col_var)
+  polygon(c(1:H, H:1), c(ci_arima[, 1], rev(ci_arima[, 2])),
+          col = adjustcolor(col_arima, alpha.f = 0.20), border = col_arima)
+  lines(1:H, rmse_var[, j],   type = "b", pch = 16, lty = 1, col = col_var)
+  lines(1:H, rmse_arima[, j], type = "b", pch = 17, lty = 2, col = col_arima)
+  legend("topleft", c("VAR(2)", "ARIMA", "IC 95%"),
+         col = c(col_var, col_arima, "grey60"),
+         lty = c(1, 2, NA), pch = c(16, 17, 15), pt.cex = c(1, 1, 1.5),
+         bty = "n", cex = 0.6)
+}
 ```
 
 ### 5.2 Discussione congiunta dei risultati ed evidenze econometriche
 
 L'analisi integrata dei rapporti RMSE e dei test di Diebold-Mariano evidenzia i seguenti aspetti principali:
 
-1. **Prevalenza dei modelli univariati ARIMA**: Per tutte e tre le variabili e a quasi tutti gli orizzonti temporali ($h = 1, 4, 8$), il rapporto $\text{RMSE}_{\text{VAR}} / \text{RMSE}_{\text{ARIMA}}$ risulta superiore all'unità (attestandosi attorno a $1.16 - 1.51$ per le Esportazioni, $1.27 - 1.47$ per le Vendite e $1.21 - 1.44$ per la Produzione Industriale). Ciò dimostra che il modello multivariato VAR(2) non offre un incremento di accuratezza puntuale rispetto ai più parsimoniosi modelli benchmark ARIMA.
-2. **Significatività dei test di Diebold-Mariano**: Nonostante i valori di RMSE siano sistematicamente inferiori per i modelli ARIMA, i p-value del test di Diebold-Mariano non consentono di rigettare l'ipotesi nulla di pari accuratezza quadratica attesa ad una soglia del $5\%$. Ciò indica che, data la variabilità degli errori nel test set, la differenza di accuratezza osservata tra VAR e ARIMA non è statisticamente significativa.
-3. **Impatto delle anomalie e del periodo di valutazione**: Il periodo di test comprende la grave shock economico-sanitario da COVID-19 del 2020. Le oscillazioni estreme registrate durante la pandemia hanno generato errori di previsione elevati in tutti i modelli; tuttavia, la maggiore ricchezza parametrica del VAR(2) ne ha incrementato la varianza campionaria, penalizzandone la capacità di estrapolazione rispetto alla semplicità dei modelli univariati.
+1.  **Prevalenza dei modelli univariati ARIMA**: Per tutte e tre le variabili e a quasi tutti gli orizzonti temporali ($h = 1, 4, 8$), il rapporto $\text{RMSE}_{\text{VAR}} / \text{RMSE}_{\text{ARIMA}}$ risulta superiore all'unità (attestandosi attorno a $1.16 - 1.51$ per le Esportazioni, $1.27 - 1.47$ per le Vendite e $1.21 - 1.44$ per la Produzione Industriale). Ciò dimostra che il modello multivariato VAR(2) non offre un incremento di accuratezza puntuale rispetto ai più parsimoniosi modelli benchmark ARIMA.
+2.  **Significatività dei test di Diebold-Mariano**: Nonostante i valori di RMSE siano sistematicamente inferiori per i modelli ARIMA, i p-value del test di Diebold-Mariano non consentono di rigettare l'ipotesi nulla di pari accuratezza quadratica attesa ad una soglia del $5\%$. Ciò indica che, data la variabilità degli errori nel test set, la differenza di accuratezza osservata tra VAR e ARIMA non è statisticamente significativa.
+3.  **Impatto delle anomalie e del periodo di valutazione**: Il periodo di test comprende la grave shock economico-sanitario da COVID-19 del 2020. Le oscillazioni estreme registrate durante la pandemia hanno generato errori di previsione elevati in tutti i modelli; tuttavia, la maggiore ricchezza parametrica del VAR(2) ne ha incrementato la varianza campionaria, penalizzandone la capacità di estrapolazione rispetto alla semplicità dei modelli univariati.
 
 ### 5.3 Conservazione dei risultati per il Laboratorio 6
 
@@ -290,6 +324,6 @@ save(var_fit, ordini_arima, has_mean, H, origini, n_origini,
      file = "risultati_previsioni.RData")
 ```
 
----
+------------------------------------------------------------------------
 
 *Nota: L'intelligenza artificiale è stata utilizzata come strumento di supporto nella stesura e verifica del codice R, nella formattazione del documento R Markdown/LaTeX e come ausilio nella sintesi delle interpretazioni econometriche.*
