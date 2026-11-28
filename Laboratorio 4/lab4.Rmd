@@ -42,14 +42,14 @@ test_diff  <- window(data_diff, start = c(2017, 1))
 var_fit <- VAR(train_diff, p = 2, type = "const")
 ```
 
-In continuità con i laboratori precedenti, si valuta la capacità previsiva out-of-sample del modello multivariato **VAR(2)** confrontandola con quella di modelli benchmark univariati **ARIMA**. L'analisi è condotta sul sistema economico italiano composto da **Esportazioni reali**, **Vendite al dettaglio** e **Produzione Industriale**.
+In continuità con i laboratori precedenti, si valuta la capacità previsiva del modello multivariato **VAR(2)** confrontandola con quella di modelli univariati **ARIMA**. L'analisi è condotta sul sistema economico italiano composto da **Esportazioni reali**, **Vendite al dettaglio** e **Produzione Industriale**.
 
 Il campione totale (1990 Q1 – 2023 Q3) è suddiviso in due parti (come già descritto nel Laboratorio 1):
 
 - **Training set**: dal primo trimestre 1990 al quarto trimestre 2016 (108 osservazioni nei livelli, pari a 107 tassi di crescita trimestrali nelle differenze logaritmiche), utilizzato per la specificazione e stima dei modelli;
 - **Test set**: dal primo trimestre 2017 al terzo trimestre 2023 (27 osservazioni), riservato esclusivamente alla valutazione delle previsioni.
 
-Sui tassi di crescita del training set si identificano i modelli benchmark univariati ARIMA tramite la procedura automatica `auto.arima()` del pacchetto `forecast`, imponendo $d=0$ e assenza di componenti stagionali (in quanto le serie sono già destagionalizzate e differenziate).
+Sui tassi di crescita del training set si identificano i modelli univariati ARIMA valutando i criteri di informazione AIC e BIC, imponendo l'ordine della componente di differenziazione pari a zero ($d=0$) e assenza di componenti stagionali (in quanto le serie sono già destagionalizzate e differenziate). Sono stati presi in considerazione anche modelli ottenuti tramite procedure automatiche (`auto.arima()` del pacchetto `forecast`), le quali hanno individuato gli ordini dei modelli ARIMA riportati in Tabella 1.
 
 ```{r echo=FALSE}
 # Stima modelli ARIMA per ciascuna serie sul training set
@@ -74,17 +74,18 @@ tab_models <- data.frame(
   Variabile = rownames(ordini_arima),
   ARIMA_Order = paste0("ARIMA(", ordini_arima[, 1], ",", ordini_arima[, 2], ",", ordini_arima[, 3], ")"),
   Costante = ifelse(has_mean, "Sì (Media non nulla)", "No"),
-  AICc = c(round(mod_esp$aicc, 2), round(mod_ven$aicc, 2), round(mod_prod$aicc, 2))
+  AIC = c(round(mod_esp$aic, 2), round(mod_ven$aic, 2), round(mod_prod$aic, 2)),
+  BIC = c(round(mod_esp$bic, 2), round(mod_ven$bic, 2), round(mod_prod$bic, 2))
 )
 
-colnames(tab_models) <- c("Variabile", "Modello Benchmark ARIMA", "Costante / Media", "AICc")
+colnames(tab_models) <- c("Variabile", "Modello ARIMA", "Costante / Media", "AIC", "BIC")
 
 kable(tab_models, caption = "Modelli ARIMA univariati selezionati sul training set", 
       booktabs = TRUE, format = "latex", linesep = "") %>%
   kable_styling(latex_options = c("hold_position", "scale_down"))
 ```
 
-Come mostrato in Tabella 1, la procedura seleziona un modello **ARIMA(1,0,0)** con costante per le Esportazioni, un **ARIMA(0,0,1)** con costante per le Vendite al dettaglio e un **ARIMA(1,0,0)** con costante per la Produzione Industriale. La bontà di adattamento dei modelli viene valutata attraverso le ACF e PACF dei residui. Per le Esportazioni, tutti i coefficienti rientrano nelle bande di confidenza, suggerendo l'assenza di autocorrelazione residua significativa. Per le Vendite al dettaglio, emergono coefficienti significativi al ritardo di 8 trimestri (2 anni), mentre per la Produzione Industriale ai ritardi di 4 e 6 trimestri, in entrambi i casi sia nell'ACF sia nella PACF. Tali evidenze suggeriscono la presenza di una debole stagionalità residua, soprattutto per la Produzione Industriale, in linea con quanto emerso nel Laboratorio 2. Decidiamo quindi di mantenere i tre ordini di ARIMA selezionati, in quanto modelli più complessi non fornirebbero un miglioramento sostanziale a fronte di un numero maggiore di parametri.
+Come mostrato in Tabella 1, si seleziona un modello **ARIMA(1,0,0)** per le Esportazioni, un **ARIMA(0,0,1)** per le Vendite al dettaglio e un **ARIMA(1,0,0)** per la Produzione Industriale. La bontà di adattamento dei modelli viene valutata attraverso le ACF e PACF dei residui. Per le Esportazioni, tutti i coefficienti rientrano nelle bande di confidenza, suggerendo l'assenza di autocorrelazione residua significativa. Per le Vendite al dettaglio, emergono coefficienti significativi al ritardo di 8 trimestri (2 anni), mentre per la Produzione Industriale ai ritardi di 4 e 6 trimestri, in entrambi i casi sia nell'ACF sia nella PACF. Tali evidenze suggeriscono la presenza di una debole stagionalità residua non completamente rimossa, soprattutto per la Produzione Industriale, in linea con quanto emerso nel Laboratorio 2. Decidiamo quindi di non aggiungere ulteriori ordini agli ARIMA selezionati, in quanto modelli più complessi non fornirebbero un miglioramento sostanziale a fronte di un numero maggiore di parametri.
 
 ```{r echo=F, fig.align="center", fig.width=7, fig.height=3.5, out.width="85%"}
 # ACF e PACF dei residui dei modelli ARIMA
